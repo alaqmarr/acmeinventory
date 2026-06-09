@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  
+  sales     Sale[]
+}
+
+model Product {
+  id                  String   @id
+  name                String
+  sku                 String   @unique
+  qrCode              String?  @unique
+  category            String?
+  defaultCostPrice    Float?
+  defaultSellingPrice Float
+  defaultGst          Float    @default(18.0) // GST percentage
+  stockQuantity       Int      @default(0)    // Derived total stock for quick access
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  batches    StockBatch[]
+  saleItems  SaleItem[]
+}
+
+model StockBatch {
+  id           String   @id
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  quantity     Int      // Original quantity added
+  remaining    Int      // Current remaining quantity in this batch
+  costPrice    Float    // CP per unit for this batch
+  sellingPrice Float    // SP per unit for this batch (might be different from default)
+  supplier     String?
+  dateAdded    DateTime @default(now())
+  
+  saleItems    SaleItem[]
+}
+
+model Sale {
+  id             String   @id
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id])
+  isGstBill      Boolean  @default(true)
+  subtotalAmount Float
+  gstAmount      Float
+  totalAmount    Float
+  date           DateTime @default(now())
+
+  items          SaleItem[]
+}
+
+model SaleItem {
+  id           String     @id
+  saleId       String
+  sale         Sale       @relation(fields: [saleId], references: [id])
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  batchId      String
+  batch        StockBatch @relation(fields: [batchId], references: [id])
+  quantity     Int
+  unitCostPrice Float     // Snapshotted CP from batch for profit calc
+  unitSellPrice Float     // Snapshotted SP at time of sale
+  subtotal      Float
+  gstAmount     Float
+
+  @@index([saleId])
+  @@index([productId])
+  @@index([batchId])
+}
