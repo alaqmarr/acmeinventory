@@ -476,6 +476,11 @@ export default function ProductClient({
                       })
                     }
                     className="w-full px-4 py-2 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -496,6 +501,11 @@ export default function ProductClient({
                       })
                     }
                     className="w-full px-4 py-2 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -512,6 +522,11 @@ export default function ProductClient({
                       setFormData({ ...formData, defaultGst: e.target.value })
                     }
                     className="w-full px-4 py-2 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="18"
                   />
                 </div>

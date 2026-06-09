@@ -589,6 +589,11 @@ export default function StockInwardClient({
                   onChange={(e) =>
                     setFormData({ ...formData, quantity: e.target.value })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
                   placeholder="Enter quantity to add"
                 />{" "}
@@ -611,6 +616,11 @@ export default function StockInwardClient({
                     onChange={(e) =>
                       setFormData({ ...formData, costPrice: e.target.value })
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
                     placeholder="0.00"
                   />{" "}
@@ -626,13 +636,20 @@ export default function StockInwardClient({
                   </label>{" "}
                   <input
                     type="number"
-                    required
-                    min="0"
                     step="0.01"
+                    min="0"
                     value={formData.sellingPrice}
                     onChange={(e) =>
-                      setFormData({ ...formData, sellingPrice: e.target.value })
+                      setFormData({
+                        ...formData,
+                        sellingPrice: e.target.value,
+                      })
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
                     placeholder="0.00"
                   />{" "}

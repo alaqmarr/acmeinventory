@@ -189,20 +189,31 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
     setSearchQuery("");
     setSearchResults([]);
   };
-  const updateQuantity = (index: number, newQty: number) => {
-    if (isNaN(newQty) || newQty < 1) return;
-    const item = billItems[index];
-    if (newQty > item.product.stockQuantity) {
-      showError(`Only ${item.product.stockQuantity} in stock.`);
+  const updateQuantity = (index: number, val: string) => {
+    const newItems = [...billItems];
+    if (val === "") {
+      newItems[index].quantity = "";
+      setBillItems(newItems);
       return;
     }
-    const newItems = [...billItems];
+    const newQty = parseInt(val);
+    if (isNaN(newQty) || newQty < 0) return;
+    if (newQty > newItems[index].product.stockQuantity) {
+      showError(`Only ${newItems[index].product.stockQuantity} in stock.`);
+      return;
+    }
     newItems[index].quantity = newQty;
     setBillItems(newItems);
   };
-  const updatePrice = (index: number, newPrice: number) => {
-    if (isNaN(newPrice) || newPrice < 0) return;
+  const updatePrice = (index: number, val: string) => {
     const newItems = [...billItems];
+    if (val === "") {
+      newItems[index].unitSellPrice = "";
+      setBillItems(newItems);
+      return;
+    }
+    const newPrice = parseFloat(val);
+    if (isNaN(newPrice) || newPrice < 0) return;
     newItems[index].unitSellPrice = newPrice;
     setBillItems(newItems);
   };
@@ -212,14 +223,14 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
     setBillItems(newItems);
   };
   const subtotal = billItems.reduce(
-    (sum, item) => sum + item.quantity * item.unitSellPrice,
+    (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitSellPrice) || 0),
     0,
   );
   const gstAmount = isGstBill
     ? billItems.reduce(
         (sum, item) =>
           sum +
-          (item.quantity * item.unitSellPrice * item.product.defaultGst) / 100,
+          ((Number(item.quantity) || 0) * (Number(item.unitSellPrice) || 0) * item.product.defaultGst) / 100,
         0,
       )
     : 0;
@@ -240,8 +251,8 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
           isGstBill,
           items: billItems.map((i) => ({
             productId: i.product.id,
-            quantity: i.quantity,
-            unitSellPrice: i.unitSellPrice,
+            quantity: Number(i.quantity) || 0,
+            unitSellPrice: Number(i.unitSellPrice) || 0,
           })),
         });
         showSuccess("Sale completed successfully!");
@@ -530,10 +541,15 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
                         </label>{" "}
                         <input
                           type="number"
+                          min="0"
+                          step="0.01"
                           value={item.unitSellPrice}
-                          onChange={(e) =>
-                            updatePrice(index, parseFloat(e.target.value))
-                          }
+                          onChange={(e) => updatePrice(index, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
                           className="w-24 px-3 py-2 rounded-[1rem] border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />{" "}
                       </div>{" "}
@@ -546,9 +562,14 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
                           type="number"
                           value={item.quantity}
                           onChange={(e) =>
-                            updateQuantity(index, parseInt(e.target.value))
+                            updateQuantity(index, e.target.value)
                           }
-                          min="1"
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              e.preventDefault();
+                            }
+                          }}
+                          min="0"
                           max={item.product.stockQuantity}
                           className="w-20 px-3 py-2 rounded-[1rem] border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />{" "}
