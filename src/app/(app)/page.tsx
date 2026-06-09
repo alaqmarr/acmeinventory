@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Package, TrendingUp, AlertTriangle, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import DashboardChartsClient from "./DashboardChartsClient";
 
 export default async function DashboardPage() {
   const productsCount = await prisma.product.count();
@@ -17,6 +18,62 @@ export default async function DashboardPage() {
     where: { stockQuantity: { lt: 10 } },
     take: 5,
     orderBy: { stockQuantity: "asc" },
+  });
+
+  // Fetch last 7 days revenue
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0,0,0,0);
+
+  const recentSales = await prisma.sale.findMany({
+    where: { date: { gte: sevenDaysAgo } },
+    select: { totalAmount: true, date: true }
+  });
+
+  const revenueDataMap = new Map();
+  // Initialize last 7 days with 0
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    revenueDataMap.set(dateStr, 0);
+  }
+  
+  recentSales.forEach(sale => {
+    const dateStr = sale.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (revenueDataMap.has(dateStr)) {
+      revenueDataMap.set(dateStr, revenueDataMap.get(dateStr) + sale.totalAmount);
+    }
+  });
+
+  const revenueData = Array.from(revenueDataMap.entries()).map(([date, revenue]) => ({ date, revenue }));
+
+  // Fetch top 5 products by volume
+  const topItems = await prisma.saleItem.groupBy({
+    by: ['productId'],
+    _sum: { quantity: true, subtotal: true },
+    orderBy: { _sum: { quantity: 'desc' } },
+    take: 5
+  });
+
+  const productIds = topItems.map(i => i.productId);
+  const topProductsRaw = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, name: true, size: true, make: true }
+  });
+
+  const topProductsData = topItems.map(item => {
+    const prod = topProductsRaw.find(p => p.id === item.productId);
+    let displayName = prod?.name || "Unknown";
+    if (prod?.make || prod?.size) {
+      displayName += ` (${[prod.make, prod.size].filter(Boolean).join(" ")})`;
+    }
+    
+    return {
+      name: displayName,
+      quantity: item._sum.quantity || 0,
+      revenue: item._sum.subtotal || 0,
+    };
   });
 
   return (
@@ -85,6 +142,8 @@ export default async function DashboardPage() {
           <p className="text-sm text-slate-500 leading-relaxed mt-2">Products below 10 units</p>
         </div>
       </div>
+
+      <DashboardChartsClient revenueData={revenueData} topProductsData={topProductsData} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40">

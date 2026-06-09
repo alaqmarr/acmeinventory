@@ -473,7 +473,7 @@ function LedgerRow({ entry, isExpanded, isSale, onToggle }: LedgerRowProps) {
         </div>
       </div>
       {/* Items table */}
-      <div className="bg-white rounded-[1.5rem] border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] border border-slate-200 overflow-x-auto custom-scrollbar">
         <table className="min-w-full divide-y divide-gray-200 ">
           <thead>
             <tr className="bg-slate-50 border-slate-200 ">
