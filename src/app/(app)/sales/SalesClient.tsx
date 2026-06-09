@@ -50,7 +50,7 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (customerSearch.length >= 2 && !selectedCustomer) {
+      if (customerSearch.length >= 1 && !selectedCustomer) {
         setIsSearchingCustomer(true);
         searchCustomers(customerSearch)
           .then((res) => {
@@ -65,7 +65,7 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
     return () => clearTimeout(delayDebounceFn);
   }, [customerSearch, selectedCustomer]);
   const handleCreateCustomer = async () => {
-    if (!customerSearch || customerSearch.length < 2) {
+    if (!customerSearch || customerSearch.length < 1) {
       showError("Please enter a valid customer name");
       return;
     }
@@ -653,7 +653,7 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
                   </div>
                 )}{" "}
                 {/* New Customer Form */}{" "}
-                {customerSearch.length >= 2 && customerResults.length === 0 && (
+                {customerSearch.length >= 1 && customerResults.length === 0 && !isSearchingCustomer && (
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-[1rem] space-y-3 mt-2">
                     {" "}
                     <p className="text-sm font-medium text-blue-800 ">
