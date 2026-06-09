@@ -17,6 +17,8 @@
 /.next/
 /out/
 
+*.db
+
 # production
 /build
 
@@ -33,6 +35,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+*.db
 # vercel
 .vercel
 

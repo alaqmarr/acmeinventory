@@ -166,7 +166,7 @@ export default function ProductAnalyticsClient({ data }: ProductAnalyticsClientP
                   <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: "1rem", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }}
-                    formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                    formatter={(value: any) => [formatCurrency(value), "Revenue"]}
                     labelFormatter={(val) => formatDate(val)}
                   />
                   <Line type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: "#4f46e5", stroke: "#fff", strokeWidth: 2 }} />
@@ -178,7 +178,7 @@ export default function ProductAnalyticsClient({ data }: ProductAnalyticsClientP
                   <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: "1rem", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }}
-                    formatter={(value: number) => [value, "Quantity Sold"]}
+                    formatter={(value: any) => [value, "Quantity Sold"]}
                     labelFormatter={(val) => formatDate(val)}
                   />
                   <Bar dataKey="quantity" fill="#10b981" radius={[4, 4, 0, 0]} />
@@ -190,7 +190,7 @@ export default function ProductAnalyticsClient({ data }: ProductAnalyticsClientP
                   <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fill: "#64748b", fontSize: 12 }} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: "1rem", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }}
-                    formatter={(value: number, name: string) => [formatCurrency(value), name === "sellPrice" ? "Selling Price" : "Cost Price"]}
+                    formatter={(value: any, name: any) => [formatCurrency(value), name === "sellPrice" ? "Selling Price" : "Cost Price"]}
                     labelFormatter={(val) => formatDate(val)}
                   />
                   <Legend verticalAlign="top" height={36}/>
