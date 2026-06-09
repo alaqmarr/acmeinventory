@@ -501,7 +501,11 @@ function LedgerRow({ entry, isExpanded, isSale, onToggle }: LedgerRowProps) {
             {details.items.map((item, idx) => (
               <tr key={idx}>
                 <td className="px-4 py-2 text-sm text-slate-900 ">
-                  {item.productName}
+                  <div className="flex items-center flex-wrap gap-2">
+                    {item.productName}
+                    {item.make && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Make: {item.make}</span>}
+                    {item.size && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Size: {item.size}</span>}
+                  </div>
                 </td>
                 <td className="px-4 py-2 text-sm text-slate-500 leading-relaxed font-mono">
                   {item.sku}
@@ -562,8 +566,10 @@ function LedgerRow({ entry, isExpanded, isSale, onToggle }: LedgerRowProps) {
             <div className="flex items-center gap-1.5 text-xs text-slate-500 leading-relaxed mb-1">
               <Package className="w-3.5 h-3.5" /> Product
             </div>
-            <p className="text-sm font-medium text-slate-900 ">
+            <p className="text-sm font-medium text-slate-900 flex flex-wrap items-center gap-2">
               {details.productName}
+              {details.make && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Make: {details.make}</span>}
+              {details.size && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Size: {details.size}</span>}
             </p>
             <p className="text-xs text-slate-500 leading-relaxed font-mono">
               {details.productSku}

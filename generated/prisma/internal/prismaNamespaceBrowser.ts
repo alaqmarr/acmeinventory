@@ -98,6 +98,9 @@ export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typ
 export const ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  make: 'make',
+  size: 'size',
+  description: 'description',
   sku: 'sku',
   qrCode: 'qrCode',
   category: 'category',
@@ -128,6 +131,7 @@ export type StockBatchScalarFieldEnum = (typeof StockBatchScalarFieldEnum)[keyof
 
 export const SaleScalarFieldEnum = {
   id: 'id',
+  invoiceNumber: 'invoiceNumber',
   customerId: 'customerId',
   isGstBill: 'isGstBill',
   subtotalAmount: 'subtotalAmount',

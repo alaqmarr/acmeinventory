@@ -7,9 +7,11 @@ interface AnalyticsClientProps {
   mostSold: any[];
   agingStock: any[];
   profitability: any[];
+  topMakes: any[];
+  familyWiseSales: any[];
 }
 
-export default function AnalyticsClient({ mostSold, agingStock, profitability }: AnalyticsClientProps) {
+export default function AnalyticsClient({ mostSold, agingStock, profitability, topMakes, familyWiseSales }: AnalyticsClientProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
@@ -90,7 +92,19 @@ export default function AnalyticsClient({ mostSold, agingStock, profitability }:
                   <tr key={item.product.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
                     <td className="py-3 px-2">
                       <div className="font-semibold text-slate-800">{item.product.name}</div>
-                      <div className="text-xs text-slate-400">SKU: {item.product.sku}</div>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-xs text-slate-400">SKU: {item.product.sku}</span>
+                        {item.product.make && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            Make: {item.product.make}
+                          </span>
+                        )}
+                        {item.product.size && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Size: {item.product.size}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-2 text-right font-medium text-slate-700">
                       {item.totalSold}
@@ -108,6 +122,71 @@ export default function AnalyticsClient({ mostSold, agingStock, profitability }:
                 {mostSold.length === 0 && (
                   <tr>
                     <td colSpan={3} className="py-8 text-center text-slate-400">No sales data available.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Family-Wise Sales */}
+        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 flex flex-col xl:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+              <PackageOpen size={20} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">Top Product Families (Grouped by Name)</h2>
+          </div>
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-sm font-semibold text-slate-500 border-b border-slate-100">
+                  <th className="pb-3 px-2">Product Family Name</th>
+                  <th className="pb-3 px-2 text-right">Total Volume</th>
+                  <th className="pb-3 px-2 text-right">Total Revenue</th>
+                  <th className="pb-3 px-2">Top Variant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {familyWiseSales.map((family) => (
+                  <tr key={family.name} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                    <td className="py-4 px-2">
+                      <div className="font-bold text-lg text-slate-800">{family.name}</div>
+                      <div className="text-xs text-slate-400 mt-1">{family.variants.length} variant(s) sold</div>
+                    </td>
+                    <td className="py-4 px-2 text-right font-medium text-slate-700">
+                      {family.totalQuantity}
+                    </td>
+                    <td className="py-4 px-2 text-right font-semibold text-emerald-600">
+                      {formatCurrency(family.totalRevenue)}
+                    </td>
+                    <td className="py-4 px-2">
+                      {family.variants.length > 0 ? (
+                        <div className="text-sm">
+                          <span className="font-semibold text-slate-700">SKU: {family.variants[0].sku}</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {family.variants[0].make && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                {family.variants[0].make}
+                              </span>
+                            )}
+                            {family.variants[0].size && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {family.variants[0].size}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-1">Sold: {family.variants[0].quantity}</div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-sm">N/A</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {familyWiseSales.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400">No family data available.</td>
                   </tr>
                 )}
               </tbody>
@@ -137,6 +216,18 @@ export default function AnalyticsClient({ mostSold, agingStock, profitability }:
                   <tr key={item.product.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
                     <td className="py-3 px-2">
                       <div className="font-semibold text-slate-800">{item.product.name}</div>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 mb-1">
+                        {item.product.make && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            Make: {item.product.make}
+                          </span>
+                        )}
+                        {item.product.size && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Size: {item.product.size}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-slate-400">Qty Sold: {item.quantitySold}</div>
                     </td>
                     <td className="py-3 px-2 text-right font-semibold text-emerald-600">
@@ -152,6 +243,47 @@ export default function AnalyticsClient({ mostSold, agingStock, profitability }:
                 {profitability.length === 0 && (
                   <tr>
                     <td colSpan={3} className="py-8 text-center text-slate-400">No recent sales data.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Top Performing Makes */}
+        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 flex flex-col xl:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+              <PackageOpen size={20} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">Top Performing Makes (30 Days)</h2>
+          </div>
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-sm font-semibold text-slate-500 border-b border-slate-100">
+                  <th className="pb-3 px-2">Make</th>
+                  <th className="pb-3 px-2 text-right">Volume Sold</th>
+                  <th className="pb-3 px-2 text-right">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topMakes.map((make, idx) => (
+                  <tr key={make.make} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-2">
+                      <div className="font-semibold text-slate-800">{make.make}</div>
+                    </td>
+                    <td className="py-3 px-2 text-right font-medium text-slate-700">
+                      {make.quantitySold}
+                    </td>
+                    <td className="py-3 px-2 text-right font-semibold text-indigo-600">
+                      {formatCurrency(make.totalRevenue)}
+                    </td>
+                  </tr>
+                ))}
+                {topMakes.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-slate-400">No make data available.</td>
                   </tr>
                 )}
               </tbody>
@@ -185,6 +317,18 @@ export default function AnalyticsClient({ mostSold, agingStock, profitability }:
                 <tr key={item.batchId} className="border-b border-rose-50 last:border-0 hover:bg-rose-50/50 transition-colors">
                   <td className="py-4 px-2">
                     <div className="font-semibold text-slate-800">{item.product.name}</div>
+                    <div className="flex flex-wrap items-center gap-2 mt-1 mb-1">
+                      {item.product.make && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          Make: {item.product.make}
+                        </span>
+                      )}
+                      {item.product.size && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Size: {item.product.size}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-rose-500 font-medium mt-0.5">{item.daysOld} days old</div>
                   </td>
                   <td className="py-4 px-2 text-slate-600 text-sm">

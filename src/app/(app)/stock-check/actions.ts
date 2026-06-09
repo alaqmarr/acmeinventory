@@ -13,6 +13,8 @@ export async function checkProductStock(query: string) {
         id: true,
         name: true,
         sku: true,
+        make: true,
+        size: true,
         category: true,
         stockQuantity: true,
         defaultSellingPrice: true,

@@ -103,8 +103,12 @@ export default async function DashboardPage() {
                   className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-[1.5rem]"
                 >
                   <div>
-                    <p className="font-medium text-slate-900 ">{product.name}</p>
-                    <p className="text-xs text-slate-500 leading-relaxed ">SKU: {product.sku}</p>
+                    <p className="font-medium text-slate-900 flex items-center flex-wrap gap-2">
+                      {product.name}
+                      {product.make && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Make: {product.make}</span>}
+                      {product.size && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Size: {product.size}</span>}
+                    </p>
+                    <p className="text-xs text-slate-500 leading-relaxed mt-1">SKU: {product.sku}</p>
                   </div>
                   <div className="px-3 py-1 bg-rose-100 text-rose-800 border border-rose-200 text-sm font-semibold rounded-lg shadow-md shadow-slate-200/40">
                     {product.stockQuantity} left

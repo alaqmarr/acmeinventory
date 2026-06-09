@@ -8,6 +8,8 @@ export async function getProductsForQR() {
       id: true,
       name: true,
       sku: true,
+      make: true,
+      size: true,
       qrCode: true,
       category: true,
       defaultSellingPrice: true,

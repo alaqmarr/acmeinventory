@@ -23,6 +23,8 @@ export interface SaleDetails {
   itemCount: number;
   items: {
     productName: string;
+    make?: string | null;
+    size?: string | null;
     sku: string;
     quantity: number;
     unitSellPrice: number;
@@ -34,6 +36,8 @@ export interface SaleDetails {
 export interface StockInDetails {
   kind: "stock_in";
   productName: string;
+  make?: string | null;
+  size?: string | null;
   productSku: string;
   supplier: string | null;
   quantity: number;
@@ -81,7 +85,7 @@ export async function getLedgerEntries(
       include: {
         items: {
           include: {
-            product: { select: { name: true, sku: true } },
+            product: { select: { name: true, sku: true, make: true, size: true } },
           },
         },
         customer: true,
@@ -112,6 +116,8 @@ export async function getLedgerEntries(
           itemCount,
           items: sale.items.map((item) => ({
             productName: item.product.name,
+            make: item.product.make,
+            size: item.product.size,
             sku: item.product.sku,
             quantity: item.quantity,
             unitSellPrice: item.unitSellPrice,
@@ -128,7 +134,7 @@ export async function getLedgerEntries(
     const batches = await prisma.stockBatch.findMany({
       where: hasDateFilter ? { dateAdded: dateFilter } : undefined,
       include: {
-        product: { select: { name: true, sku: true } },
+        product: { select: { name: true, sku: true, make: true, size: true } },
       },
       orderBy: { dateAdded: "desc" },
     });
@@ -145,6 +151,8 @@ export async function getLedgerEntries(
         details: {
           kind: "stock_in",
           productName: batch.product.name,
+          make: batch.product.make,
+          size: batch.product.size,
           productSku: batch.product.sku,
           supplier: batch.supplier,
           quantity: batch.quantity,

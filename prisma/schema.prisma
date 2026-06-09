@@ -32,6 +32,9 @@ model Customer {
 model Product {
   id                  String   @id
   name                String
+  make                String?
+  size                String?
+  description         String?
   sku                 String   @unique
   qrCode              String?  @unique
   category            String?
@@ -62,6 +65,7 @@ model StockBatch {
 
 model Sale {
   id             String   @id
+  invoiceNumber  String?  @unique
   customerId     String
   customer       Customer @relation(fields: [customerId], references: [id])
   isGstBill      Boolean  @default(true)

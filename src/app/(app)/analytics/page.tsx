@@ -1,12 +1,14 @@
 import React from 'react';
-import { getMostSoldProducts, getAgingStock, getProfitabilityMetrics } from './actions';
+import { getMostSoldProducts, getAgingStock, getProfitabilityMetrics, getTopSellingMakes, getFamilyWiseSales } from './actions';
 import AnalyticsClient from './AnalyticsClient';
 
 export default async function AnalyticsPage() {
-  const [mostSold, agingStock, profitability] = await Promise.all([
+  const [mostSold, agingStock, profitability, topMakes, familyWiseSales] = await Promise.all([
     getMostSoldProducts(),
     getAgingStock(),
-    getProfitabilityMetrics()
+    getProfitabilityMetrics(),
+    getTopSellingMakes(),
+    getFamilyWiseSales()
   ]);
 
   return (
@@ -15,6 +17,8 @@ export default async function AnalyticsPage() {
         mostSold={mostSold} 
         agingStock={agingStock} 
         profitability={profitability} 
+        topMakes={topMakes}
+        familyWiseSales={familyWiseSales}
       />
     </div>
   );

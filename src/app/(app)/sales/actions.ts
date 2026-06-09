@@ -103,9 +103,18 @@ export async function createSale(data: {
     }
     const totalAmount = subtotalAmount + gstAmount;
     const saleId = generateId("sal", `sale-${Date.now()}`);
+
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+    const todaysCount = await tx.sale.count({ where: { date: { gte: todayStart } } });
+    const dateStr = `${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${(new Date().getDate()).toString().padStart(2, '0')}`;
+    const seqStr = (todaysCount + 1).toString().padStart(3, '0');
+    const invoiceNumber = `INV-${dateStr}-${seqStr}`;
+
     const sale = await tx.sale.create({
       data: {
         id: saleId,
+        invoiceNumber,
         customerId: data.customerId,
         isGstBill: data.isGstBill,
         subtotalAmount,

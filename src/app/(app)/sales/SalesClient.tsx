@@ -30,21 +30,801 @@ export default function SalesClient({ initialSales }: { initialSales: any[] }) {
   const [isPending, startTransition] = useTransition();
   const showError = (msg: string) => {
     if (alert?.show) alert.show(msg, "error");
-    else if (alert?.showAlert) alert.showAlert({ title: "Error", message: msg, type: "error" });
+    else if (alert?.showAlert)
+      alert.showAlert({ title: "Error", message: msg, type: "error" });
     else if (alert?.error) alert.error(msg);
     else alert(msg);
   };
   const showSuccess = (msg: string) => {
     if (alert?.show) alert.show(msg, "success");
-    else if (alert?.showAlert) alert.showAlert({ title: "Success", message: msg, type: "success" });
+    else if (alert?.showAlert)
+      alert.showAlert({ title: "Success", message: msg, type: "success" });
     else if (alert?.success) alert.success(msg);
     else alert(msg);
   }; /* --- Customer State --- */
-const [customerSearch, setCustomerSearch] = useState(''); const [customerResults, setCustomerResults] = useState<any[]>([]); const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null); const [isSearchingCustomer, setIsSearchingCustomer] = useState(false); const [newCustomerPhone, setNewCustomerPhone] = useState(''); const [isCreatingCustomer, setIsCreatingCustomer] = useState(false); useEffect(() => { const delayDebounceFn = setTimeout(() => { if (customerSearch.length >= 2 && !selectedCustomer) { setIsSearchingCustomer(true); searchCustomers(customerSearch).then(res => { setCustomerResults(res); setIsSearchingCustomer(false); }).catch(() => setIsSearchingCustomer(false)); } else { setCustomerResults([]); } }, 300); return () => clearTimeout(delayDebounceFn); }, [customerSearch, selectedCustomer]); const handleCreateCustomer = async () => { if (!customerSearch || customerSearch.length < 2) { showError("Please enter a valid customer name"); return; } setIsCreatingCustomer(true); try { const newCust = await createCustomer({ name: customerSearch, phone: newCustomerPhone }); setSelectedCustomer(newCust); setCustomerSearch(newCust.name); setCustomerResults([]); showSuccess("Customer created!"); } catch (err: any) { showError(err.message || "Failed to create customer"); } finally { setIsCreatingCustomer(false); } }; const [isGstBill, setIsGstBill] = useState(true); /* --- Product Search State --- */
-const [searchQuery, setSearchQuery] = useState(''); const [searchResults, setSearchResults] = useState<any[]>([]); const [isSearching, setIsSearching] = useState(false); const [billItems, setBillItems] = useState<any[]>([]); /* --- QR Scanner State --- */
-const [isScannerOpen, setIsScannerOpen] = useState(false); useEffect(() => { let scanner: Html5QrcodeScanner | null = null; if (isScannerOpen) { scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: { width: 250, height: 250 } }, false); scanner.render((text) => { scanner?.clear(); setIsScannerOpen(false); handleQRScan(text); }, (err) => { /* ignore continuous scanning errors */
-});
-}
-return () => { if (scanner) { scanner.clear().catch(console.error); } }; }, [isScannerOpen]); const handleQRScan = async (text: string) => { /* text should be like "SKU:DRILL-001" */
-const sku = text.startsWith('SKU:') ? text.replace('SKU:', '').trim() : text.trim(); showSuccess(`Scanned SKU: ${sku}`); try { const res = await searchProducts(sku); const product = res.find((p: any) => p.sku === sku); if (product) { addToBill(product); } else { showError(`Product not found for SKU: ${sku}`); } } catch (err) { showError("Failed to search scanned product"); } }; useEffect(() => { const delayDebounceFn = setTimeout(() => { if (searchQuery.length >= 2) { setIsSearching(true); searchProducts(searchQuery).then(res => { setSearchResults(res); setIsSearching(false); }).catch(err => { console.error(err); setIsSearching(false); }); } else { setSearchResults([]); } }, 300); return () => clearTimeout(delayDebounceFn); }, [searchQuery]); const addToBill = (product: any) => { if (product.stockQuantity <= 0) { showError(`No stock available for ${product.name}`); return; } const existingItem = billItems.find(item => item.product.id === product.id); if (existingItem) { if (existingItem.quantity >= product.stockQuantity) { showError(`Cannot add more. Only ${product.stockQuantity} in stock.`); return; } setBillItems(billItems.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item )); } else { setBillItems([...billItems, { product, quantity: 1, unitSellPrice: product.defaultSellingPrice }]); } setSearchQuery(''); setSearchResults([]); }; const updateQuantity = (index: number, newQty: number) => { if (isNaN(newQty) || newQty < 1) return; const item = billItems[index]; if (newQty > item.product.stockQuantity) { showError(`Only ${item.product.stockQuantity} in stock.`); return; } const newItems = [...billItems]; newItems[index].quantity = newQty; setBillItems(newItems); }; const updatePrice = (index: number, newPrice: number) => { if (isNaN(newPrice) || newPrice < 0) return; const newItems = [...billItems]; newItems[index].unitSellPrice = newPrice; setBillItems(newItems); }; const removeItem = (index: number) => { const newItems = [...billItems]; newItems.splice(index, 1); setBillItems(newItems); }; const subtotal = billItems.reduce((sum, item) => sum + (item.quantity * item.unitSellPrice), 0); const gstAmount = isGstBill ? billItems.reduce((sum, item) => sum + ((item.quantity * item.unitSellPrice) * item.product.defaultGst / 100), 0) : 0; const grandTotal = subtotal + gstAmount; const handleCompleteSale = () => { if (billItems.length === 0) { showError('No items in the bill.'); return; } if (!selectedCustomer) { showError('Customer selection is mandatory.'); return; } startTransition(async () => { try { await createSale({ customerId: selectedCustomer.id, isGstBill, items: billItems.map(i => ({ productId: i.product.id, quantity: i.quantity, unitSellPrice: i.unitSellPrice })) }); showSuccess('Sale completed successfully!'); setBillItems([]); setSelectedCustomer(null); setCustomerSearch(''); setNewCustomerPhone(''); setSearchQuery(''); router.refresh(); } catch (err: any) { showError(err.message || 'Failed to complete sale'); } }); }; return ( <div className="max-w-7xl mx-auto space-y-6 relative"> {/* QR Scanner Modal */} {isScannerOpen && ( <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"> <div className="bg-white rounded-3xl p-6 max-w-lg w-full relative"> <button onClick={() => setIsScannerOpen(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-gray-200" > <X className="w-5 h-5" /> </button> <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"> <Camera className="w-6 h-6 text-blue-500" /> Scan QR Code </h3> <div id="qr-reader" className="w-full rounded-[1.5rem] overflow-hidden border-2 border-dashed border-slate-200 "></div> <p className="text-center text-sm text-slate-500 leading-relaxed mt-4">Point your camera at the product QR label.</p> </div> </div> )} <div className="flex justify-between items-center"> <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">New Sale</h1> </div> <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> {/* Left Side - Search & Bill Items */} <div className="lg:col-span-2 space-y-6"> <div className="p-6 rounded-3xl border border-slate-200 bg-white "> <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"> <Search className="w-5 h-5" /> Find Products </h2> <div className="flex items-center gap-3"> <div className="relative flex-1"> <input type="text" placeholder="Search by name or SKU..." className="w-full pl-10 pr-4 py-3 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /> <Search className="w-5 h-5 absolute left-3 top-3.5 text-gray-400" /> {isSearching && ( <div className="absolute right-3 top-3.5 w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> )} </div> <button onClick={() => setIsScannerOpen(true)} className="p-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1rem] hover:bg-blue-100/40 transition-colors flex items-center gap-2 font-medium" > <QrCode className="w-6 h-6" /> <span className="hidden sm:inline">Scan</span> </button> </div> {searchResults.length > 0 && ( <div className="mt-4 border border-slate-200 rounded-[1rem] overflow-hidden divide-y divide-gray-100 "> {searchResults.map(p => ( <div key={p.id} className="p-4 flex items-center justify-between bg-slate-50 border-slate-200 hover:bg-slate-100/50 transition-colors"> <div> <h3 className="font-medium text-slate-900 ">{p.name}</h3> <p className="text-sm text-slate-500 leading-relaxed flex gap-4"> <span>SKU: {p.sku}</span> <span className={p.stockQuantity > 0 ? 'text-emerald-600' : 'text-red-500'}> Stock: {p.stockQuantity} </span> <span>Price: ₹{p.defaultSellingPrice}</span> </p> </div> <button onClick={() => addToBill(p)} disabled={p.stockQuantity <= 0} className="p-2 rounded-[1rem] bg-green-600 text-white font-bold text-lg shadow-xl hover:bg-green-700 hover:shadow-2xl transition-all border border-green-700 hover:-translate-y-1 hover:opacity-90 disabled:opacity-50" > <Plus className="w-5 h-5" /> </button> </div> ))} </div> )} </div> <div className="p-6 rounded-3xl border border-slate-200 bg-white "> <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"> <ShoppingCart className="w-5 h-5" /> Bill Items </h2> {billItems.length === 0 ? ( <div className="text-center py-12 text-slate-500 leading-relaxed"> <Package className="w-12 h-12 mx-auto mb-3 opacity-20" /> <p>No items added to the bill yet.</p> </div> ) : ( <div className="space-y-4"> {billItems.map((item, index) => ( <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 "> <div className="flex-1"> <h3 className="font-medium">{item.product.name}</h3> <p className="text-sm text-slate-500 leading-relaxed"> Stock before: {item.product.stockQuantity} &rarr; After: <span className="font-medium text-blue-600 ">{item.product.stockQuantity - item.quantity}</span> </p> </div> <div className="flex items-center gap-3"> <div className="flex flex-col"> <label className="text-xs text-slate-500 leading-relaxed mb-1">Sale Price (₹)</label> <input type="number" value={item.unitSellPrice} onChange={e => updatePrice(index, parseFloat(e.target.value))} className="w-24 px-3 py-2 rounded-[1rem] border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" /> </div> <div className="flex flex-col"> <label className="text-xs text-slate-500 leading-relaxed mb-1">Qty</label> <input type="number" value={item.quantity} onChange={e => updateQuantity(index, parseInt(e.target.value))} min="1" max={item.product.stockQuantity} className="w-20 px-3 py-2 rounded-[1rem] border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" /> </div> <div className="flex flex-col pt-5"> <button onClick={() => removeItem(index)} className="p-2 text-red-500 hover:bg-red-50/20 rounded-[1rem] transition-colors" > <Trash2 className="w-5 h-5" /> </button> </div> </div> </div> ))} </div> )} </div> </div> {/* Right Side - Summary & Customer */} <div className="space-y-6"> <div className="p-6 rounded-3xl border border-slate-200 bg-white "> <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"> <User className="w-5 h-5" /> Bill To <span className="text-red-500 ml-1 text-sm">* Mandatory</span> </h2> {selectedCustomer ? ( <div className="p-4 bg-green-50 rounded-[1rem] border border-green-200 relative"> <button onClick={() => setSelectedCustomer(null)} className="absolute top-2 right-2 p-1 text-green-700 hover:bg-green-200 rounded-lg/50" > <X className="w-4 h-4" /> </button> <p className="font-semibold text-green-900 ">{selectedCustomer.name}</p> {selectedCustomer.phone && ( <p className="text-sm text-green-700 flex items-center gap-1 mt-1"> <Phone className="w-3 h-3" /> {selectedCustomer.phone} </p> )} </div> ) : ( <div className="space-y-4 relative"> <div> <label className="block text-sm text-slate-600 mb-1">Search or Add Customer Name</label> <div className="relative"> <input type="text" placeholder="Start typing name..." value={customerSearch} onChange={e => setCustomerSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" /> <User className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" /> {isSearchingCustomer && ( <div className="absolute right-3 top-3.5 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> )} </div> </div> {/* Customer Autocomplete Dropdown */} {customerResults.length > 0 && !selectedCustomer && ( <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-[1rem] shadow-lg overflow-hidden"> {customerResults.map(c => ( <button key={c.id} onClick={() => { setSelectedCustomer(c); setCustomerSearch(c.name); setCustomerResults([]); }} className="w-full text-left p-3 hover:bg-slate-50 border-slate-200 transition-colors border-b border-slate-200 last:border-0" > <p className="font-medium text-slate-900 ">{c.name}</p> {c.phone && <p className="text-xs text-slate-500 leading-relaxed ">{c.phone}</p>} </button> ))} </div> )} {/* New Customer Form */} {customerSearch.length >= 2 && customerResults.length === 0 && ( <div className="p-4 bg-blue-50 border border-blue-100 rounded-[1rem] space-y-3 mt-2"> <p className="text-sm font-medium text-blue-800 ">New customer found. Add details:</p> <input type="text" placeholder="Phone Number (Optional)" value={newCustomerPhone} onChange={e => setNewCustomerPhone(e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white " /> <button onClick={handleCreateCustomer} disabled={isCreatingCustomer} className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2" > {isCreatingCustomer ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />} Save & Select Customer </button> </div> )} </div> )} <div className="pt-6"> <label className="flex items-center gap-3 cursor-pointer p-3 rounded-[1rem] border border-slate-200 hover:bg-slate-50 border-slate-200/50 transition-colors"> <input type="checkbox" checked={isGstBill} onChange={e => setIsGstBill(e.target.checked)} className="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500" /> <span className="font-medium text-slate-700 ">Generate GST Bill</span> </label> </div> </div> <div className="p-6 rounded-3xl border border-slate-200 bg-white "> <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"> <Calculator className="w-5 h-5" /> Summary </h2> <div className="space-y-3 mb-6"> <div className="flex justify-between text-slate-600 "> <span>Subtotal</span> <span>₹{subtotal.toFixed(2)}</span> </div> <div className="flex justify-between text-slate-600 "> <span>GST Amount</span> <span>₹{gstAmount.toFixed(2)}</span> </div> <div className="h-px w-full bg-slate-100 my-2" /> <div className="flex justify-between text-xl font-bold tracking-tight"> <span>Grand Total</span> <span>₹{grandTotal.toFixed(2)}</span> </div> </div> <button onClick={handleCompleteSale} disabled={isPending || billItems.length === 0 || !selectedCustomer} className="w-full py-4 rounded-[1rem] bg-emerald-600 text-white font-bold shadow-xl shadow-slate-200/50 hover:bg-emerald-700 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all border border-emerald-700 text-lg flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-opacity" > <Check className="w-6 h-6" /> {isPending ? 'Processing...' : 'Complete Sale'} </button> </div> </div> </div> {/* Recent Sales */} <div className="p-6 rounded-3xl border border-slate-200 bg-white mt-8"> <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2"> <Clock className="w-5 h-5" /> Recent Sales </h2> <div className="overflow-x-auto"> <table className="w-full text-left border-collapse"> <thead> <tr className="border-b border-slate-200 text-sm text-slate-500 leading-relaxed"> <th className="pb-3 px-4 font-medium">Date</th> <th className="pb-3 px-4 font-medium">Customer</th> <th className="pb-3 px-4 font-medium">Items</th> <th className="pb-3 px-4 font-medium">GST</th> <th className="pb-3 px-4 font-medium text-right">Total</th> </tr> </thead> <tbody className="divide-y divide-gray-100 "> {initialSales.map((sale: any) => ( <tr key={sale.id} className="hover:bg-slate-50 border-slate-200/20"> <td className="py-4 px-4 text-sm"> {new Date(sale.date).toLocaleString()} </td> <td className="py-4 px-4"> <div className="font-medium">{sale.customer?.name || 'Walk-in'}</div> <div className="text-xs text-slate-500 leading-relaxed">{sale.customer?.phone}</div> </td> <td className="py-4 px-4 text-sm text-slate-600 "> {sale.items.length} product(s) </td> <td className="py-4 px-4"> {sale.isGstBill ? ( <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200 "> Yes </span> ) : ( <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800 "> No </span> )} </td> <td className="py-4 px-4 font-bold text-right"> ₹{sale.totalAmount.toFixed(2)} </td> </tr> ))} {initialSales.length === 0 && ( <tr> <td colSpan={5} className="py-8 text-center text-slate-500 leading-relaxed"> No recent sales found. </td> </tr> )} </tbody> </table> </div> </div> </div> );
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerResults, setCustomerResults] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (customerSearch.length >= 2 && !selectedCustomer) {
+        setIsSearchingCustomer(true);
+        searchCustomers(customerSearch)
+          .then((res) => {
+            setCustomerResults(res);
+            setIsSearchingCustomer(false);
+          })
+          .catch(() => setIsSearchingCustomer(false));
+      } else {
+        setCustomerResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [customerSearch, selectedCustomer]);
+  const handleCreateCustomer = async () => {
+    if (!customerSearch || customerSearch.length < 2) {
+      showError("Please enter a valid customer name");
+      return;
+    }
+    setIsCreatingCustomer(true);
+    try {
+      const newCust = await createCustomer({
+        name: customerSearch,
+        phone: newCustomerPhone,
+      });
+      setSelectedCustomer(newCust);
+      setCustomerSearch(newCust.name);
+      setCustomerResults([]);
+      showSuccess("Customer created!");
+    } catch (err: any) {
+      showError(err.message || "Failed to create customer");
+    } finally {
+      setIsCreatingCustomer(false);
+    }
+  };
+  const [isGstBill, setIsGstBill] =
+    useState(true); /* --- Product Search State --- */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [variantSelection, setVariantSelection] = useState<{
+    name: string;
+    variants: any[];
+  } | null>(null);
+  const [billItems, setBillItems] = useState<any[]>(
+    [],
+  ); /* --- QR Scanner State --- */
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  useEffect(() => {
+    let scanner: Html5QrcodeScanner | null = null;
+    if (isScannerOpen) {
+      scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false,
+      );
+      scanner.render(
+        (text) => {
+          scanner?.clear();
+          setIsScannerOpen(false);
+          handleQRScan(text);
+        },
+        (err) => {
+          /* ignore continuous scanning errors */
+        },
+      );
+    }
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
+    };
+  }, [isScannerOpen]);
+  const handleQRScan = async (text: string) => {
+    /* text should be like "SKU:DRILL-001" */
+    const sku = text.startsWith("SKU:")
+      ? text.replace("SKU:", "").trim()
+      : text.trim();
+    showSuccess(`Scanned SKU: ${sku}`);
+    try {
+      const res = await searchProducts(sku);
+      const product = res.find((p: any) => p.sku === sku);
+      if (product) {
+        addToBill(product);
+      } else {
+        showError(`Product not found for SKU: ${sku}`);
+      }
+    } catch (err) {
+      showError("Failed to search scanned product");
+    }
+  };
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        setIsSearching(true);
+        searchProducts(searchQuery)
+          .then((res) => {
+            setSearchResults(res);
+            setIsSearching(false);
+          })
+          .catch((err) => {
+            console.error(err);
+            setIsSearching(false);
+          });
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+  const addToBill = (product: any) => {
+    if (product.stockQuantity <= 0) {
+      showError(`No stock available for ${product.name}`);
+      return;
+    }
+    const existingItem = billItems.find(
+      (item) => item.product.id === product.id,
+    );
+    if (existingItem) {
+      if (existingItem.quantity >= product.stockQuantity) {
+        showError(`Cannot add more. Only ${product.stockQuantity} in stock.`);
+        return;
+      }
+      setBillItems(
+        billItems.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      );
+    } else {
+      setBillItems([
+        ...billItems,
+        { product, quantity: 1, unitSellPrice: product.defaultSellingPrice },
+      ]);
+    }
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+  const updateQuantity = (index: number, newQty: number) => {
+    if (isNaN(newQty) || newQty < 1) return;
+    const item = billItems[index];
+    if (newQty > item.product.stockQuantity) {
+      showError(`Only ${item.product.stockQuantity} in stock.`);
+      return;
+    }
+    const newItems = [...billItems];
+    newItems[index].quantity = newQty;
+    setBillItems(newItems);
+  };
+  const updatePrice = (index: number, newPrice: number) => {
+    if (isNaN(newPrice) || newPrice < 0) return;
+    const newItems = [...billItems];
+    newItems[index].unitSellPrice = newPrice;
+    setBillItems(newItems);
+  };
+  const removeItem = (index: number) => {
+    const newItems = [...billItems];
+    newItems.splice(index, 1);
+    setBillItems(newItems);
+  };
+  const subtotal = billItems.reduce(
+    (sum, item) => sum + item.quantity * item.unitSellPrice,
+    0,
+  );
+  const gstAmount = isGstBill
+    ? billItems.reduce(
+        (sum, item) =>
+          sum +
+          (item.quantity * item.unitSellPrice * item.product.defaultGst) / 100,
+        0,
+      )
+    : 0;
+  const grandTotal = subtotal + gstAmount;
+  const handleCompleteSale = () => {
+    if (billItems.length === 0) {
+      showError("No items in the bill.");
+      return;
+    }
+    if (!selectedCustomer) {
+      showError("Customer selection is mandatory.");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await createSale({
+          customerId: selectedCustomer.id,
+          isGstBill,
+          items: billItems.map((i) => ({
+            productId: i.product.id,
+            quantity: i.quantity,
+            unitSellPrice: i.unitSellPrice,
+          })),
+        });
+        showSuccess("Sale completed successfully!");
+        setBillItems([]);
+        setSelectedCustomer(null);
+        setCustomerSearch("");
+        setNewCustomerPhone("");
+        setSearchQuery("");
+        router.refresh();
+      } catch (err: any) {
+        showError(err.message || "Failed to complete sale");
+      }
+    });
+  };
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 relative">
+      {" "}
+      {/* QR Scanner Modal */}{" "}
+      {isScannerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          {" "}
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full relative">
+            {" "}
+            <button
+              onClick={() => setIsScannerOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-gray-200"
+            >
+              {" "}
+              <X className="w-5 h-5" />{" "}
+            </button>{" "}
+            <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              {" "}
+              <Camera className="w-6 h-6 text-blue-500" /> Scan QR Code{" "}
+            </h3>{" "}
+            <div
+              id="qr-reader"
+              className="w-full rounded-[1.5rem] overflow-hidden border-2 border-dashed border-slate-200 "
+            ></div>{" "}
+            <p className="text-center text-sm text-slate-500 leading-relaxed mt-4">
+              Point your camera at the product QR label.
+            </p>{" "}
+          </div>{" "}
+        </div>
+      )}{" "}
+      {/* Variant Selection Modal */}
+      {variantSelection && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full relative shadow-2xl">
+            <button
+              onClick={() => setVariantSelection(null)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-gray-200"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              <Package className="w-6 h-6 text-blue-500" />
+              Select Variant for {variantSelection.name}
+            </h3>
+            <div className="max-h-80 overflow-y-auto space-y-2 mt-4 pr-2">
+              {variantSelection.variants.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => {
+                    addToBill(v);
+                    setVariantSelection(null);
+                  }}
+                  className="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex justify-between items-center"
+                >
+                  <div>
+                    <div className="flex gap-2 mb-1">
+                      {v.make && (
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                          Make: {v.make}
+                        </span>
+                      )}
+                      {v.size && (
+                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+                          Size: {v.size}
+                        </span>
+                      )}
+                      {!v.make && !v.size && (
+                        <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">
+                          Standard
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      SKU: {v.sku} · ₹{v.defaultSellingPrice}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                      v.stockQuantity > 0
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {v.stockQuantity} in stock
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="flex justify-between items-center">
+        {" "}
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+          New Sale
+        </h1>{" "}
+      </div>{" "}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {" "}
+        {/* Left Side - Search & Bill Items */}{" "}
+        <div className="lg:col-span-2 space-y-6">
+          {" "}
+          <div className="p-6 rounded-3xl border border-slate-200 bg-white ">
+            {" "}
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              {" "}
+              <Search className="w-5 h-5" /> Find Products{" "}
+            </h2>{" "}
+            <div className="flex items-center gap-3">
+              {" "}
+              <div className="relative flex-1">
+                {" "}
+                <input
+                  type="text"
+                  placeholder="Search by name or SKU..."
+                  className="w-full pl-10 pr-4 py-3 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />{" "}
+                <Search className="w-5 h-5 absolute left-3 top-3.5 text-gray-400" />{" "}
+                {isSearching && (
+                  <div className="absolute right-3 top-3.5 w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                )}{" "}
+              </div>{" "}
+              <button
+                onClick={() => setIsScannerOpen(true)}
+                className="p-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1rem] hover:bg-blue-100/40 transition-colors flex items-center gap-2 font-medium"
+              >
+                {" "}
+                <QrCode className="w-6 h-6" />{" "}
+                <span className="hidden sm:inline">Scan</span>{" "}
+              </button>{" "}
+            </div>{" "}
+            {searchResults.length > 0 &&
+              (() => {
+                const groupedSearchResults = searchResults.reduce(
+                  (acc, product) => {
+                    if (!acc[product.name]) acc[product.name] = [];
+                    acc[product.name].push(product);
+                    return acc;
+                  },
+                  {} as Record<string, any[]>,
+                );
+
+                return (
+                  <div className="mt-4 border border-slate-200 rounded-[1rem] overflow-hidden divide-y divide-gray-100 ">
+                    {" "}
+                    {Object.entries(groupedSearchResults).map(
+                      ([name, variantsData]) => {
+                        const variants = variantsData as any[];
+                        const totalStock = variants.reduce(
+                          (sum, v) => sum + v.stockQuantity,
+                          0,
+                        );
+                        const isOutOfStock = totalStock <= 0;
+                        if (variants.length === 1) {
+                          const v = variants[0];
+                          return (
+                            <button
+                              key={name}
+                              onClick={() => addToBill(v)}
+                              disabled={isOutOfStock}
+                              className="w-full text-left p-4 flex items-center justify-between bg-slate-50 border-b border-slate-200 last:border-0 hover:bg-slate-100/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <div>
+                                <h3 className="font-medium text-slate-900 flex items-center gap-2">
+                                  {name}
+                                  {v.make && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Make: {v.make}</span>}
+                                  {v.size && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Size: {v.size}</span>}
+                                </h3>
+                                {v.description && <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[250px]">{v.description}</p>}
+                                <p className="text-sm text-slate-500 leading-relaxed mt-1">
+                                  SKU: {v.sku} · ₹{v.defaultSellingPrice} · <span className={v.stockQuantity > 0 ? "text-emerald-600 font-medium" : "text-red-500 font-medium"}>Stock: {v.stockQuantity}</span>
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={name}
+                            onClick={() => setVariantSelection({ name, variants })}
+                            disabled={isOutOfStock}
+                            className="w-full text-left p-4 flex items-center justify-between bg-slate-50 border-b border-slate-200 last:border-0 hover:bg-slate-100/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <div>
+                              <h3 className="font-medium text-slate-900">
+                                {name}
+                              </h3>
+                              <p className="text-sm text-slate-500 leading-relaxed flex gap-4 mt-1">
+                                <span>
+                                  {variants.length} variants available
+                                </span>
+                                <span
+                                  className={
+                                    totalStock > 0
+                                      ? "text-emerald-600 font-medium"
+                                      : "text-red-500 font-medium"
+                                  }
+                                >
+                                  Total Stock: {totalStock}
+                                </span>
+                              </p>
+                            </div>
+                            <div className="text-blue-600 text-sm font-medium pr-2">
+                              Select Variant &rarr;
+                            </div>
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                );
+              })()}{" "}
+          </div>{" "}
+          <div className="p-6 rounded-3xl border border-slate-200 bg-white ">
+            {" "}
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              {" "}
+              <ShoppingCart className="w-5 h-5" /> Bill Items{" "}
+            </h2>{" "}
+            {billItems.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 leading-relaxed">
+                {" "}
+                <Package className="w-12 h-12 mx-auto mb-3 opacity-20" />{" "}
+                <p>No items added to the bill yet.</p>{" "}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {" "}
+                {billItems.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 "
+                  >
+                    {" "}
+                    <div className="flex-1">
+                      {" "}
+                      <h3 className="font-medium flex flex-wrap items-center gap-2">
+                        {item.product.name}
+                        {item.product.make && (
+                          <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                            Make: {item.product.make}
+                          </span>
+                        )}
+                        {item.product.size && (
+                          <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                            Size: {item.product.size}
+                          </span>
+                        )}
+                      </h3>{" "}
+                      {item.product.description && (
+                        <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[250px]">
+                          {item.product.description}
+                        </p>
+                      )}
+                      <p className="text-sm text-slate-500 leading-relaxed mt-1">
+                        {" "}
+                        Stock before: {item.product.stockQuantity} &rarr; After:{" "}
+                        <span className="font-medium text-blue-600 ">
+                          {item.product.stockQuantity - item.quantity}
+                        </span>{" "}
+                      </p>{" "}
+                    </div>{" "}
+                    <div className="flex items-center gap-3">
+                      {" "}
+                      <div className="flex flex-col">
+                        {" "}
+                        <label className="text-xs text-slate-500 leading-relaxed mb-1">
+                          Sale Price (₹)
+                        </label>{" "}
+                        <input
+                          type="number"
+                          value={item.unitSellPrice}
+                          onChange={(e) =>
+                            updatePrice(index, parseFloat(e.target.value))
+                          }
+                          className="w-24 px-3 py-2 rounded-[1rem] border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />{" "}
+                      </div>{" "}
+                      <div className="flex flex-col">
+                        {" "}
+                        <label className="text-xs text-slate-500 leading-relaxed mb-1">
+                          Qty
+                        </label>{" "}
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateQuantity(index, parseInt(e.target.value))
+                          }
+                          min="1"
+                          max={item.product.stockQuantity}
+                          className="w-20 px-3 py-2 rounded-[1rem] border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />{" "}
+                      </div>{" "}
+                      <div className="flex flex-col pt-5">
+                        {" "}
+                        <button
+                          onClick={() => removeItem(index)}
+                          className="p-2 text-red-500 hover:bg-red-50/20 rounded-[1rem] transition-colors"
+                        >
+                          {" "}
+                          <Trash2 className="w-5 h-5" />{" "}
+                        </button>{" "}
+                      </div>{" "}
+                    </div>{" "}
+                  </div>
+                ))}{" "}
+              </div>
+            )}{" "}
+          </div>{" "}
+        </div>{" "}
+        {/* Right Side - Summary & Customer */}{" "}
+        <div className="space-y-6">
+          {" "}
+          <div className="p-6 rounded-3xl border border-slate-200 bg-white ">
+            {" "}
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              {" "}
+              <User className="w-5 h-5" /> Bill To{" "}
+              <span className="text-red-500 ml-1 text-sm">
+                * Mandatory
+              </span>{" "}
+            </h2>{" "}
+            {selectedCustomer ? (
+              <div className="p-4 bg-green-50 rounded-[1rem] border border-green-200 relative">
+                {" "}
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="absolute top-2 right-2 p-1 text-green-700 hover:bg-green-200 rounded-lg/50"
+                >
+                  {" "}
+                  <X className="w-4 h-4" />{" "}
+                </button>{" "}
+                <p className="font-semibold text-green-900 ">
+                  {selectedCustomer.name}
+                </p>{" "}
+                {selectedCustomer.phone && (
+                  <p className="text-sm text-green-700 flex items-center gap-1 mt-1">
+                    {" "}
+                    <Phone className="w-3 h-3" /> {selectedCustomer.phone}{" "}
+                  </p>
+                )}{" "}
+              </div>
+            ) : (
+              <div className="space-y-4 relative">
+                {" "}
+                <div>
+                  {" "}
+                  <label className="block text-sm text-slate-600 mb-1">
+                    Search or Add Customer Name
+                  </label>{" "}
+                  <div className="relative">
+                    {" "}
+                    <input
+                      type="text"
+                      placeholder="Start typing name..."
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />{" "}
+                    <User className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />{" "}
+                    {isSearchingCustomer && (
+                      <div className="absolute right-3 top-3.5 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    )}{" "}
+                  </div>{" "}
+                </div>{" "}
+                {/* Customer Autocomplete Dropdown */}{" "}
+                {customerResults.length > 0 && !selectedCustomer && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-[1rem] shadow-lg overflow-hidden">
+                    {" "}
+                    {customerResults.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          setSelectedCustomer(c);
+                          setCustomerSearch(c.name);
+                          setCustomerResults([]);
+                        }}
+                        className="w-full text-left p-3 hover:bg-slate-50 border-slate-200 transition-colors border-b border-slate-200 last:border-0"
+                      >
+                        {" "}
+                        <p className="font-medium text-slate-900 ">
+                          {c.name}
+                        </p>{" "}
+                        {c.phone && (
+                          <p className="text-xs text-slate-500 leading-relaxed ">
+                            {c.phone}
+                          </p>
+                        )}{" "}
+                      </button>
+                    ))}{" "}
+                  </div>
+                )}{" "}
+                {/* New Customer Form */}{" "}
+                {customerSearch.length >= 2 && customerResults.length === 0 && (
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-[1rem] space-y-3 mt-2">
+                    {" "}
+                    <p className="text-sm font-medium text-blue-800 ">
+                      New customer found. Add details:
+                    </p>{" "}
+                    <input
+                      type="text"
+                      placeholder="Phone Number (Optional)"
+                      value={newCustomerPhone}
+                      onChange={(e) => setNewCustomerPhone(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white "
+                    />{" "}
+                    <button
+                      onClick={handleCreateCustomer}
+                      disabled={isCreatingCustomer}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                    >
+                      {" "}
+                      {isCreatingCustomer ? (
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}{" "}
+                      Save & Select Customer{" "}
+                    </button>{" "}
+                  </div>
+                )}{" "}
+              </div>
+            )}{" "}
+            <div className="pt-6">
+              {" "}
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-[1rem] border border-slate-200 hover:bg-slate-50 border-slate-200/50 transition-colors">
+                {" "}
+                <input
+                  type="checkbox"
+                  checked={isGstBill}
+                  onChange={(e) => setIsGstBill(e.target.checked)}
+                  className="w-5 h-5 rounded border-slate-200 text-blue-600 focus:ring-blue-500"
+                />{" "}
+                <span className="font-medium text-slate-700 ">
+                  Generate GST Bill
+                </span>{" "}
+              </label>{" "}
+            </div>{" "}
+          </div>{" "}
+          <div className="p-6 rounded-3xl border border-slate-200 bg-white ">
+            {" "}
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              {" "}
+              <Calculator className="w-5 h-5" /> Summary{" "}
+            </h2>{" "}
+            <div className="space-y-3 mb-6">
+              {" "}
+              <div className="flex justify-between text-slate-600 ">
+                {" "}
+                <span>Subtotal</span> <span>₹{subtotal.toFixed(2)}</span>{" "}
+              </div>{" "}
+              <div className="flex justify-between text-slate-600 ">
+                {" "}
+                <span>GST Amount</span>{" "}
+                <span>₹{gstAmount.toFixed(2)}</span>{" "}
+              </div>{" "}
+              <div className="h-px w-full bg-slate-100 my-2" />{" "}
+              <div className="flex justify-between text-xl font-bold tracking-tight">
+                {" "}
+                <span>Grand Total</span>{" "}
+                <span>₹{grandTotal.toFixed(2)}</span>{" "}
+              </div>{" "}
+            </div>{" "}
+            <button
+              onClick={handleCompleteSale}
+              disabled={
+                isPending || billItems.length === 0 || !selectedCustomer
+              }
+              className="w-full py-4 rounded-[1rem] bg-emerald-600 text-white font-bold shadow-xl shadow-slate-200/50 hover:bg-emerald-700 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all border border-emerald-700 text-lg flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {" "}
+              <Check className="w-6 h-6" />{" "}
+              {isPending ? "Processing..." : "Complete Sale"}{" "}
+            </button>{" "}
+          </div>{" "}
+        </div>{" "}
+      </div>{" "}
+      {/* Recent Sales */}{" "}
+      <div className="p-6 rounded-3xl border border-slate-200 bg-white mt-8">
+        {" "}
+        <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2">
+          {" "}
+          <Clock className="w-5 h-5" /> Recent Sales{" "}
+        </h2>{" "}
+        <div className="overflow-x-auto">
+          {" "}
+          <table className="w-full text-left border-collapse">
+            {" "}
+            <thead>
+              {" "}
+              <tr className="border-b border-slate-200 text-sm text-slate-500 leading-relaxed">
+                {" "}
+                <th className="pb-3 px-4 font-medium">Date</th>{" "}
+                <th className="pb-3 px-4 font-medium">Customer</th>{" "}
+                <th className="pb-3 px-4 font-medium">Items</th>{" "}
+                <th className="pb-3 px-4 font-medium">GST</th>{" "}
+                <th className="pb-3 px-4 font-medium text-right">Total</th>{" "}
+              </tr>{" "}
+            </thead>{" "}
+            <tbody className="divide-y divide-gray-100 ">
+              {" "}
+              {initialSales.map((sale: any) => (
+                <tr
+                  key={sale.id}
+                  className="hover:bg-slate-50 border-slate-200/20"
+                >
+                  {" "}
+                  <td className="py-4 px-4 text-sm">
+                    {" "}
+                    <div className="font-medium text-slate-900">
+                      {sale.invoiceNumber || `INV-${sale.id.slice(0, 8).toUpperCase()}`}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {new Date(sale.date).toLocaleString()}
+                    </div>{" "}
+                  </td>{" "}
+                  <td className="py-4 px-4">
+                    {" "}
+                    <div className="font-medium">
+                      {sale.customer?.name || "Walk-in"}
+                    </div>{" "}
+                    <div className="text-xs text-slate-500 leading-relaxed">
+                      {sale.customer?.phone}
+                    </div>{" "}
+                  </td>{" "}
+                  <td className="py-4 px-4 text-sm text-slate-600 ">
+                    {" "}
+                    {sale.items.length} product(s){" "}
+                  </td>{" "}
+                  <td className="py-4 px-4">
+                    {" "}
+                    {sale.isGstBill ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200 ">
+                        {" "}
+                        Yes{" "}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800 ">
+                        {" "}
+                        No{" "}
+                      </span>
+                    )}{" "}
+                  </td>{" "}
+                  <td className="py-4 px-4 font-bold text-right">
+                    {" "}
+                    ₹{sale.totalAmount.toFixed(2)}{" "}
+                  </td>{" "}
+                </tr>
+              ))}{" "}
+              {initialSales.length === 0 && (
+                <tr>
+                  {" "}
+                  <td
+                    colSpan={5}
+                    className="py-8 text-center text-slate-500 leading-relaxed"
+                  >
+                    {" "}
+                    No recent sales found.{" "}
+                  </td>{" "}
+                </tr>
+              )}{" "}
+            </tbody>{" "}
+          </table>{" "}
+        </div>{" "}
+      </div>{" "}
+    </div>
+  );
 }

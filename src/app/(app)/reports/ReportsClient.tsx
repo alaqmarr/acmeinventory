@@ -421,7 +421,19 @@ export default function ReportsClient() {
                                 className="hover:bg-zinc-50/50 transition-colors"
                               >
                                 <td className="px-6 py-4 font-medium text-zinc-900 ">
-                                  {item.name}
+                                  <div>{item.name}</div>
+                                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    {item.make && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                        Make: {item.make}
+                                      </span>
+                                    )}
+                                    {item.size && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        Size: {item.size}
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4">{item.sku}</td>
                                 <td className="px-6 py-4 text-right">

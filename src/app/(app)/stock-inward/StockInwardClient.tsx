@@ -26,6 +26,9 @@ type Product = {
   defaultSellingPrice: number;
   defaultGst: number;
   stockQuantity: number;
+  make?: string | null;
+  size?: string | null;
+  description?: string | null;
 };
 type StockBatch = {
   id: string;
@@ -36,7 +39,7 @@ type StockBatch = {
   sellingPrice: number;
   supplier: string | null;
   dateAdded: string | Date;
-  product?: { name: string; sku: string };
+  product?: { name: string; sku: string; make?: string | null; size?: string | null };
 };
 export default function StockInwardClient({
   initialProducts,
@@ -53,14 +56,832 @@ export default function StockInwardClient({
   const [loading, setLoading] = useState(false);
   const { showAlert } = useAlert();
   const dropdownRef = useRef<HTMLDivElement>(null); /* Price History State */
-const [priceHistory, setPriceHistory] = useState<StockBatch[]>([]); const [loadingHistory, setLoadingHistory] = useState(false); /* QR Scanner State */
-const [isScannerOpen, setIsScannerOpen] = useState(false); const [formData, setFormData] = useState({ quantity: "", costPrice: "", sellingPrice: "", supplier: "", }); /* Close dropdown when clicking outside */
-useEffect(() => { function handleClickOutside(event: MouseEvent) { if ( dropdownRef.current && !dropdownRef.current.contains(event.target as Node) ) { setIsDropdownOpen(false); } } document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside); }, []); /* Fetch History whenever a product is selected */
-useEffect(() => { if (selectedProduct) { setLoadingHistory(true); getProductBatchHistory(selectedProduct.id) .then(res => setPriceHistory(res)) .catch(err => console.error(err)) .finally(() => setLoadingHistory(false)); } else { setPriceHistory([]); } }, [selectedProduct]); /* QR Scanner Effect */
-useEffect(() => { let scanner: Html5QrcodeScanner | null = null; if (isScannerOpen) { scanner = new Html5QrcodeScanner('qr-reader-inward', { fps: 10, qrbox: { width: 250, height: 250 } }, false); scanner.render((text) => { scanner?.clear(); setIsScannerOpen(false); handleQRScan(text); }, (err) => { /* ignore errors */
-});
-}
-return () => { if (scanner) { scanner.clear().catch(console.error); } }; }, [isScannerOpen]); const handleQRScan = (text: string) => { const sku = text.startsWith('SKU:') ? text.replace('SKU:', '').trim() : text.trim(); const product = products.find(p => p.sku === sku); if (product) { handleSelectProduct(product); showAlert({ title: "Success", message: `Scanned: ${product.name}`, type: "success" }); } else { showAlert({ title: "Not Found", message: `No product found for SKU: ${sku}`, type: "error" }); } }; const filteredProducts = products.filter( (p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ); const handleSelectProduct = (product: Product) => { setSelectedProduct(product); setSearchQuery(product.name); setIsDropdownOpen(false); setFormData({ ...formData, costPrice: product.defaultCostPrice?.toString() || "", sellingPrice: product.defaultSellingPrice.toString(), }); }; const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); if (!selectedProduct) { showAlert({ title: "Missing Product", message: "Please select a product before adding stock.", type: "error", }); return; } const quantity = parseInt(formData.quantity); const costPrice = parseFloat(formData.costPrice); const sellingPrice = parseFloat(formData.sellingPrice); if (!quantity || quantity <= 0) { showAlert({ title: "Invalid", message: "Enter valid quantity.", type: "error" }); return; } if (isNaN(costPrice) || costPrice < 0) { showAlert({ title: "Invalid", message: "Enter valid cost price.", type: "error" }); return; } if (isNaN(sellingPrice) || sellingPrice <= 0) { showAlert({ title: "Invalid", message: "Enter valid selling price.", type: "error" }); return; } setLoading(true); const result = await addStock({ productId: selectedProduct.id, quantity, costPrice, sellingPrice, supplier: formData.supplier || undefined, }); if (result.success) { showAlert({ title: "Stock Added", message: `Added ${quantity} units. Rates have been updated.`, type: "success", }); /* Update local products state with new default prices */
-setProducts(products.map(p => p.id === selectedProduct.id ? { ...p, defaultCostPrice: costPrice, defaultSellingPrice: sellingPrice, stockQuantity: p.stockQuantity + quantity } : p )); setSelectedProduct(null); setSearchQuery(""); setFormData({ quantity: "", costPrice: "", sellingPrice: "", supplier: "" }); /* Refresh recent batches */
-const updatedBatches = await getRecentBatches(); setBatches(updatedBatches); } else { showAlert({ title: "Error", message: result.error || "Failed to add stock.", type: "error" }); } setLoading(false); }; const formatDate = (date: string | Date) => { return new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", }); }; return ( <div className="space-y-6 relative"> {/* QR Scanner Modal */} {isScannerOpen && ( <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"> <div className="bg-white rounded-3xl p-6 max-w-lg w-full relative shadow-2xl"> <button onClick={() => setIsScannerOpen(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-gray-200" > <X className="w-5 h-5" /> </button> <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2"> <Camera className="w-6 h-6 text-blue-500" /> Scan QR Label </h3> <div id="qr-reader-inward" className="w-full rounded-[1.5rem] overflow-hidden border-2 border-dashed border-slate-200 "></div> </div> </div> )} {/* Header */} <div> <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight text-slate-900 "> Stock Inward </h1> <p className="text-slate-500 leading-relaxed mt-1"> Add new stock batches to your inventory and update base prices. </p> </div> <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> {/* Stock Entry Form */} <div className="lg:col-span-2 space-y-6"> <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all" > <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3"> <div className="w-10 h-10 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1rem] flex items-center justify-center"> <PackagePlus className="w-5 h-5" /> </div> <div> <h2 className="font-bold text-slate-900 "> Add Stock Entry </h2> <p className="text-xs text-slate-500 leading-relaxed "> Select a product and enter batch details </p> </div> </div> <div className="p-6 space-y-5"> {/* Product Search / Select */} <div ref={dropdownRef} className="relative"> <label className="block text-sm font-medium text-slate-700 mb-1"> Product * </label> <div className="flex gap-2"> <div className="relative flex-1"> <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"> <Search className="h-5 w-5 text-gray-400" /> </div> <input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsDropdownOpen(true); if (selectedProduct && e.target.value !== selectedProduct.name) { setSelectedProduct(null); } }} onFocus={() => setIsDropdownOpen(true)} className="block w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-[1rem] leading-5 bg-slate-50 border-slate-200 text-slate-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="Search by product name or SKU..." /> <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"> <ChevronDown className="h-4 w-4 text-gray-400" /> </div> </div> <button type="button" onClick={() => setIsScannerOpen(true)} className="px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1rem] flex items-center gap-2 hover:bg-blue-100/40 transition-colors" > <QrCode className="w-5 h-5" /> <span className="hidden sm:inline font-medium">Scan</span> </button> </div> {/* Dropdown */} {isDropdownOpen && ( <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-[1rem] shadow-lg max-h-60 overflow-y-auto"> {filteredProducts.length === 0 ? ( <div className="px-4 py-3 text-sm text-slate-500 leading-relaxed "> No products found. </div> ) : ( filteredProducts.map((product) => ( <button key={product.id} type="button" onClick={() => handleSelectProduct(product)} className={`w-full text-left px-4 py-3 hover:bg-slate-50 border-slate-200/70 transition-colors flex items-center justify-between ${ selectedProduct?.id === product.id ? "bg-slate-50 border-slate-200 " : "" }`} > <div> <p className="text-sm font-medium text-slate-900 "> {product.name} </p> <p className="text-xs text-slate-500 leading-relaxed "> SKU: {product.sku} </p> </div> <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ product.stockQuantity > 10 ? "bg-emerald-100 text-emerald-800 border border-emerald-200 " : "bg-rose-100 text-rose-800 border border-rose-200 " }`}> {product.stockQuantity} in stock </span> </button> )) )} </div> )} </div> {/* Selected product info card */} {selectedProduct && ( <div className="p-4 bg-slate-50 border-slate-200 rounded-[1.5rem] flex flex-col gap-2"> <div className="flex items-center justify-between"> <div className="flex items-center gap-3"> <div className="w-10 h-10 bg-green-50 text-emerald-600 rounded-[1rem] flex items-center justify-center"> <Package className="w-5 h-5" /> </div> <div> <p className="font-medium text-slate-900 "> {selectedProduct.name} </p> <p className="text-xs text-slate-500 leading-relaxed "> SKU: {selectedProduct.sku} · Current Stock: <span className="font-semibold text-slate-900 ">{selectedProduct.stockQuantity}</span> </p> </div> </div> <button type="button" onClick={() => { setSelectedProduct(null); setSearchQuery(""); setFormData({ quantity: "", costPrice: "", sellingPrice: "", supplier: "" }); }} className="text-xs font-medium text-slate-500 leading-relaxed hover:text-slate-900 transition-colors" > Clear </button> </div> </div> )} {/* Quantity */} <div> <label className="block text-sm font-medium text-slate-700 mb-1"> Quantity * </label> <input type="number" required min="1" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value }) } className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all" placeholder="Enter quantity to add" /> </div> {/* Cost & Selling Price */} <div className="grid grid-cols-2 gap-4"> <div> <label className="block text-sm font-medium text-slate-700 mb-1"> Cost Price / Unit (₹) * </label> <input type="number" required min="0" step="0.01" value={formData.costPrice} onChange={(e) => setFormData({ ...formData, costPrice: e.target.value }) } className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all" placeholder="0.00" /> <p className="text-xs text-slate-500 leading-relaxed mt-1">This will update the product's base cost.</p> </div> <div> <label className="block text-sm font-medium text-slate-700 mb-1"> Selling Price / Unit (₹) * </label> <input type="number" required min="0" step="0.01" value={formData.sellingPrice} onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value, }) } className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all" placeholder="0.00" /> <p className="text-xs text-slate-500 leading-relaxed mt-1">This will update the product's base selling price.</p> </div> </div> {/* Supplier */} <div> <label className="block text-sm font-medium text-slate-700 mb-1"> Supplier Name </label> <div className="relative"> <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"> <Truck className="h-5 w-5 text-gray-400" /> </div> <input type="text" value={formData.supplier} onChange={(e) => setFormData({ ...formData, supplier: e.target.value }) } className="w-full pl-10 pr-4 py-2.5 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 text-slate-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="e.g. ABC Suppliers Pvt. Ltd." /> </div> </div> {/* Total Value Preview */} {formData.quantity && formData.costPrice && formData.sellingPrice && ( <div className="p-4 bg-blue-50 border border-blue-100 rounded-[1.5rem]"> <p className="text-xs font-medium text-blue-600 mb-2 uppercase tracking-wider"> Batch Summary </p> <div className="grid grid-cols-3 gap-4"> <div> <p className="text-xs text-blue-500 ">Total Cost</p> <p className="text-lg font-bold tracking-tight text-indigo-700 "> ₹{(parseInt(formData.quantity) * parseFloat(formData.costPrice)).toLocaleString("en-IN")} </p> </div> <div> <p className="text-xs text-blue-500 ">Total Value</p> <p className="text-lg font-bold tracking-tight text-indigo-700 "> ₹{(parseInt(formData.quantity) * parseFloat(formData.sellingPrice)).toLocaleString("en-IN")} </p> </div> <div> <p className="text-xs text-blue-500 ">Margin</p> <p className="text-lg font-bold tracking-tight text-emerald-600 "> ₹{(parseInt(formData.quantity) * (parseFloat(formData.sellingPrice) - parseFloat(formData.costPrice))).toLocaleString("en-IN")} </p> </div> </div> </div> )} </div> {/* Submit */} <div className="px-6 py-4 border-t border-slate-200 flex justify-end"> <button type="submit" disabled={loading || !selectedProduct} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-200/40 border border-blue-700 transition-all font-medium rounded-[1rem] hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2" > {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Confirm Stock Entry </button> </div> </form> {/* Price History Section */} {selectedProduct && ( <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all overflow-hidden"> <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between"> <div className="flex items-center gap-3"> <div className="w-8 h-8 bg-violet-50 text-violet-600 border border-violet-100 rounded-lg flex items-center justify-center"> <History className="w-4 h-4" /> </div> <h3 className="font-bold text-slate-900 ">Historical Rates</h3> </div> {loadingHistory && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />} </div> <div className="p-0"> {priceHistory.length > 0 ? ( <table className="w-full text-left text-sm"> <thead className="bg-slate-50 border-slate-200 text-slate-500 leading-relaxed "> <tr> <th className="px-6 py-2 font-medium">Date</th> <th className="px-6 py-2 font-medium">Supplier</th> <th className="px-6 py-2 font-medium">Qty</th> <th className="px-6 py-2 font-medium">Cost / Sell (₹)</th> </tr> </thead> <tbody className="divide-y divide-gray-100 "> {priceHistory.map(batch => ( <tr key={batch.id} className="hover:bg-slate-50 border-slate-200/30"> <td className="px-6 py-3">{formatDate(batch.dateAdded)}</td> <td className="px-6 py-3">{batch.supplier || '—'}</td> <td className="px-6 py-3">{batch.quantity}</td> <td className="px-6 py-3 font-medium text-slate-900 "> ₹{batch.costPrice} / ₹{batch.sellingPrice} </td> </tr> ))} </tbody> </table> ) : ( <div className="p-6 text-center text-sm text-slate-500 leading-relaxed"> No historical batches found for this product. </div> )} </div> </div> )} </div> {/* Quick Stats Sidebar */} <div className="space-y-6"> <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all p-6"> <div className="flex items-center gap-3 mb-4"> <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-[1rem] flex items-center justify-center"> <Clock className="w-5 h-5" /> </div> <h3 className="font-bold text-slate-900 ">Quick Info</h3> </div> <div className="space-y-3"> <div className="flex justify-between items-center py-2 border-b border-slate-200 "> <span className="text-sm text-slate-500 leading-relaxed">Total Products</span> <span className="text-sm font-semibold text-slate-900 ">{products.length}</span> </div> <div className="flex justify-between items-center py-2 border-b border-slate-200 "> <span className="text-sm text-slate-500 leading-relaxed">Low Stock Items</span> <span className="text-sm font-semibold text-red-600 "> {products.filter((p) => p.stockQuantity < 10).length} </span> </div> </div> </div> <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all overflow-hidden"> <div className="px-6 py-4 border-b border-slate-200 "> <h3 className="font-bold text-slate-900 ">Recent Entries</h3> </div> <div className="divide-y divide-gray-100 "> {batches.slice(0, 5).map((batch) => ( <div key={batch.id} className="p-4 hover:bg-slate-50 border-slate-200/30"> <div className="flex justify-between items-start mb-1"> <p className="text-sm font-medium text-slate-900 line-clamp-1">{batch.product?.name}</p> <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"> +{batch.quantity} </span> </div> <p className="text-xs text-slate-500 leading-relaxed mb-1">₹{batch.costPrice} / ₹{batch.sellingPrice}</p> <p className="text-[10px] text-gray-400">{formatDate(batch.dateAdded)}</p> </div> ))} </div> </div> </div> </div> </div> );
+  const [priceHistory, setPriceHistory] = useState<StockBatch[]>([]);
+  const [loadingHistory, setLoadingHistory] =
+    useState(false); /* QR Scanner State */
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [variantSelection, setVariantSelection] = useState<{
+    name: string;
+    variants: Product[];
+  } | null>(null);
+  const [formData, setFormData] = useState({
+    quantity: "",
+    costPrice: "",
+    sellingPrice: "",
+    supplier: "",
+  }); /* Close dropdown when clicking outside */
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []); /* Fetch History whenever a product is selected */
+  useEffect(() => {
+    if (selectedProduct) {
+      setLoadingHistory(true);
+      getProductBatchHistory(selectedProduct.id)
+        .then((res) => setPriceHistory(res))
+        .catch((err) => console.error(err))
+        .finally(() => setLoadingHistory(false));
+    } else {
+      setPriceHistory([]);
+    }
+  }, [selectedProduct]); /* QR Scanner Effect */
+  useEffect(() => {
+    let scanner: Html5QrcodeScanner | null = null;
+    if (isScannerOpen) {
+      scanner = new Html5QrcodeScanner(
+        "qr-reader-inward",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false,
+      );
+      scanner.render(
+        (text) => {
+          scanner?.clear();
+          setIsScannerOpen(false);
+          handleQRScan(text);
+        },
+        (err) => {
+          /* ignore errors */
+        },
+      );
+    }
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
+    };
+  }, [isScannerOpen]);
+  const handleQRScan = (text: string) => {
+    const sku = text.startsWith("SKU:")
+      ? text.replace("SKU:", "").trim()
+      : text.trim();
+    const product = products.find((p) => p.sku === sku);
+    if (product) {
+      handleSelectProduct(product);
+      showAlert({
+        title: "Success",
+        message: `Scanned: ${product.name}`,
+        type: "success",
+      });
+    } else {
+      showAlert({
+        title: "Not Found",
+        message: `No product found for SKU: ${sku}`,
+        type: "error",
+      });
+    }
+  };
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const groupedProducts = filteredProducts.reduce(
+    (acc, product) => {
+      if (!acc[product.name]) {
+        acc[product.name] = [];
+      }
+      acc[product.name].push(product);
+      return acc;
+    },
+    {} as Record<string, Product[]>,
+  );
+
+  const handleSelectProductName = (name: string, variants: Product[]) => {
+    if (variants.length === 1) {
+      handleSelectProduct(variants[0]);
+    } else {
+      setIsDropdownOpen(false);
+      setVariantSelection({ name, variants });
+    }
+  };
+  const handleSelectProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setSearchQuery(product.name);
+    setIsDropdownOpen(false);
+    setFormData({
+      ...formData,
+      costPrice: product.defaultCostPrice?.toString() || "",
+      sellingPrice: product.defaultSellingPrice.toString(),
+    });
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProduct) {
+      showAlert({
+        title: "Missing Product",
+        message: "Please select a product before adding stock.",
+        type: "error",
+      });
+      return;
+    }
+    const quantity = parseInt(formData.quantity);
+    const costPrice = parseFloat(formData.costPrice);
+    const sellingPrice = parseFloat(formData.sellingPrice);
+    if (!quantity || quantity <= 0) {
+      showAlert({
+        title: "Invalid",
+        message: "Enter valid quantity.",
+        type: "error",
+      });
+      return;
+    }
+    if (isNaN(costPrice) || costPrice < 0) {
+      showAlert({
+        title: "Invalid",
+        message: "Enter valid cost price.",
+        type: "error",
+      });
+      return;
+    }
+    if (isNaN(sellingPrice) || sellingPrice <= 0) {
+      showAlert({
+        title: "Invalid",
+        message: "Enter valid selling price.",
+        type: "error",
+      });
+      return;
+    }
+    setLoading(true);
+    const result = await addStock({
+      productId: selectedProduct.id,
+      quantity,
+      costPrice,
+      sellingPrice,
+      supplier: formData.supplier || undefined,
+    });
+    if (result.success) {
+      showAlert({
+        title: "Stock Added",
+        message: `Added ${quantity} units. Rates have been updated.`,
+        type: "success",
+      }); /* Update local products state with new default prices */
+      setProducts(
+        products.map((p) =>
+          p.id === selectedProduct.id
+            ? {
+                ...p,
+                defaultCostPrice: costPrice,
+                defaultSellingPrice: sellingPrice,
+                stockQuantity: p.stockQuantity + quantity,
+              }
+            : p,
+        ),
+      );
+      setSelectedProduct(null);
+      setSearchQuery("");
+      setFormData({
+        quantity: "",
+        costPrice: "",
+        sellingPrice: "",
+        supplier: "",
+      }); /* Refresh recent batches */
+      const updatedBatches = await getRecentBatches();
+      setBatches(updatedBatches);
+    } else {
+      showAlert({
+        title: "Error",
+        message: result.error || "Failed to add stock.",
+        type: "error",
+      });
+    }
+    setLoading(false);
+  };
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  return (
+    <div className="space-y-6 relative">
+      {" "}
+      {/* Variant Selection Modal */}
+      {variantSelection && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full relative shadow-2xl">
+            <button
+              onClick={() => setVariantSelection(null)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-gray-200"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              <Package className="w-6 h-6 text-blue-500" />
+              Select Variant for {variantSelection.name}
+            </h3>
+            <div className="max-h-80 overflow-y-auto space-y-2 mt-4 pr-2">
+              {variantSelection.variants.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => {
+                    handleSelectProduct(v);
+                    setVariantSelection(null);
+                  }}
+                  className="w-full text-left p-3 rounded-2xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex justify-between items-center"
+                >
+                  <div>
+                    <div className="flex gap-2 mb-1">
+                      {v.make && (
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                          Make: {v.make}
+                        </span>
+                      )}
+                      {v.size && (
+                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+                          Size: {v.size}
+                        </span>
+                      )}
+                      {!v.make && !v.size && (
+                        <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">
+                          Standard
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">SKU: {v.sku}</p>
+                  </div>
+                  <span
+                    className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                      v.stockQuantity > 0
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {v.stockQuantity} in stock
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* QR Scanner Modal */}{" "}
+      {isScannerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          {" "}
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full relative shadow-2xl">
+            {" "}
+            <button
+              onClick={() => setIsScannerOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-gray-200"
+            >
+              {" "}
+              <X className="w-5 h-5" />{" "}
+            </button>{" "}
+            <h3 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              {" "}
+              <Camera className="w-6 h-6 text-blue-500" /> Scan QR Label{" "}
+            </h3>{" "}
+            <div
+              id="qr-reader-inward"
+              className="w-full rounded-[1.5rem] overflow-hidden border-2 border-dashed border-slate-200 "
+            ></div>{" "}
+          </div>{" "}
+        </div>
+      )}{" "}
+      {/* Header */}{" "}
+      <div>
+        {" "}
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight text-slate-900 ">
+          {" "}
+          Stock Inward{" "}
+        </h1>{" "}
+        <p className="text-slate-500 leading-relaxed mt-1">
+          {" "}
+          Add new stock batches to your inventory and update base prices.{" "}
+        </p>{" "}
+      </div>{" "}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {" "}
+        {/* Stock Entry Form */}{" "}
+        <div className="lg:col-span-2 space-y-6">
+          {" "}
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all"
+          >
+            {" "}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+              {" "}
+              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1rem] flex items-center justify-center">
+                {" "}
+                <PackagePlus className="w-5 h-5" />{" "}
+              </div>{" "}
+              <div>
+                {" "}
+                <h2 className="font-bold text-slate-900 ">
+                  {" "}
+                  Add Stock Entry{" "}
+                </h2>{" "}
+                <p className="text-xs text-slate-500 leading-relaxed ">
+                  {" "}
+                  Select a product and enter batch details{" "}
+                </p>{" "}
+              </div>{" "}
+            </div>{" "}
+            <div className="p-6 space-y-5">
+              {" "}
+              {/* Product Search / Select */}{" "}
+              <div ref={dropdownRef} className="relative">
+                {" "}
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {" "}
+                  Product *{" "}
+                </label>{" "}
+                <div className="flex gap-2">
+                  {" "}
+                  <div className="relative flex-1">
+                    {" "}
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      {" "}
+                      <Search className="h-5 w-5 text-gray-400" />{" "}
+                    </div>{" "}
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setIsDropdownOpen(true);
+                        if (
+                          selectedProduct &&
+                          e.target.value !== selectedProduct.name
+                        ) {
+                          setSelectedProduct(null);
+                        }
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      className="block w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-[1rem] leading-5 bg-slate-50 border-slate-200 text-slate-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      placeholder="Search by product name or SKU..."
+                    />{" "}
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      {" "}
+                      <ChevronDown className="h-4 w-4 text-gray-400" />{" "}
+                    </div>{" "}
+                  </div>{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsScannerOpen(true)}
+                    className="px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-[1rem] flex items-center gap-2 hover:bg-blue-100/40 transition-colors"
+                  >
+                    {" "}
+                    <QrCode className="w-5 h-5" />{" "}
+                    <span className="hidden sm:inline font-medium">
+                      Scan
+                    </span>{" "}
+                  </button>{" "}
+                </div>{" "}
+                {/* Dropdown */}{" "}
+                {isDropdownOpen && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-[1rem] shadow-lg max-h-60 overflow-y-auto">
+                    {" "}
+                    {Object.keys(groupedProducts).length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-slate-500 leading-relaxed ">
+                        {" "}
+                        No products found.{" "}
+                      </div>
+                    ) : (
+                      Object.entries(groupedProducts).map(
+                        ([name, variantsData]) => {
+                          const variants = variantsData as Product[];
+                          const totalStock = variants.reduce(
+                            (sum, v) => sum + v.stockQuantity,
+                            0,
+                          );
+                          if (variants.length === 1) {
+                            const v = variants[0];
+                            return (
+                              <button
+                                key={name}
+                                type="button"
+                                onClick={() => handleSelectProductName(name, variants)}
+                                className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex items-center justify-between"
+                              >
+                                <div>
+                                  <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                                    {name}
+                                  </p>
+                                  <p className="text-xs text-slate-500 mt-1">
+                                    SKU: {v.sku}
+                                    {v.make && <span className="ml-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Make: {v.make}</span>}
+                                    {v.size && <span className="ml-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Size: {v.size}</span>}
+                                  </p>
+                                </div>
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${v.stockQuantity > 10 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
+                                  {v.stockQuantity} in stock
+                                </span>
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => handleSelectProductName(name, variants)}
+                              className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors flex items-center justify-between"
+                            >
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">
+                                  {name}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {variants.length} variants available
+                                </p>
+                              </div>
+                              <span
+                                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${totalStock > 10 ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-rose-100 text-rose-800 border border-rose-200"}`}
+                              >
+                                {totalStock} total stock
+                              </span>
+                            </button>
+                          );
+                        },
+                      )
+                    )}{" "}
+                  </div>
+                )}{" "}
+              </div>{" "}
+              {/* Selected product info card */}{" "}
+              {selectedProduct && (
+                <div className="p-4 bg-slate-50 border-slate-200 rounded-[1.5rem] flex flex-col gap-2">
+                  {" "}
+                  <div className="flex items-center justify-between">
+                    {" "}
+                    <div className="flex items-center gap-3">
+                      {" "}
+                      <div className="w-10 h-10 bg-green-50 text-emerald-600 rounded-[1rem] flex items-center justify-center">
+                        {" "}
+                        <Package className="w-5 h-5" />{" "}
+                      </div>{" "}
+                      <div>
+                        {" "}
+                        <p className="font-medium text-slate-900 flex flex-wrap items-center gap-2">
+                          {" "}
+                          {selectedProduct.name}{" "}
+                          {selectedProduct.make && (
+                            <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                              Make: {selectedProduct.make}
+                            </span>
+                          )}
+                          {selectedProduct.size && (
+                            <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+                              Size: {selectedProduct.size}
+                            </span>
+                          )}
+                        </p>{" "}
+                        {selectedProduct.description && (
+                          <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[300px]">
+                            {selectedProduct.description}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                          {" "}
+                          SKU: {selectedProduct.sku} · Current Stock:{" "}
+                          <span className="font-semibold text-slate-900 ">
+                            {selectedProduct.stockQuantity}
+                          </span>{" "}
+                        </p>{" "}
+                      </div>{" "}
+                    </div>{" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setSearchQuery("");
+                        setFormData({
+                          quantity: "",
+                          costPrice: "",
+                          sellingPrice: "",
+                          supplier: "",
+                        });
+                      }}
+                      className="text-xs font-medium text-slate-500 leading-relaxed hover:text-slate-900 transition-colors"
+                    >
+                      {" "}
+                      Clear{" "}
+                    </button>{" "}
+                  </div>{" "}
+                </div>
+              )}{" "}
+              {/* Quantity */}{" "}
+              <div>
+                {" "}
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {" "}
+                  Quantity *{" "}
+                </label>{" "}
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={formData.quantity}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quantity: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
+                  placeholder="Enter quantity to add"
+                />{" "}
+              </div>{" "}
+              {/* Cost & Selling Price */}{" "}
+              <div className="grid grid-cols-2 gap-4">
+                {" "}
+                <div>
+                  {" "}
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {" "}
+                    Cost Price / Unit (₹) *{" "}
+                  </label>{" "}
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={formData.costPrice}
+                    onChange={(e) =>
+                      setFormData({ ...formData, costPrice: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
+                    placeholder="0.00"
+                  />{" "}
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                    This will update the product's base cost.
+                  </p>{" "}
+                </div>{" "}
+                <div>
+                  {" "}
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {" "}
+                    Selling Price / Unit (₹) *{" "}
+                  </label>{" "}
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={formData.sellingPrice}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sellingPrice: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 rounded-[1rem] border border-slate-200 bg-white border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/20 outline-none transition-all"
+                    placeholder="0.00"
+                  />{" "}
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                    This will update the product's base selling price.
+                  </p>{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* Supplier */}{" "}
+              <div>
+                {" "}
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {" "}
+                  Supplier Name{" "}
+                </label>{" "}
+                <div className="relative">
+                  {" "}
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    {" "}
+                    <Truck className="h-5 w-5 text-gray-400" />{" "}
+                  </div>{" "}
+                  <input
+                    type="text"
+                    value={formData.supplier}
+                    onChange={(e) =>
+                      setFormData({ ...formData, supplier: e.target.value })
+                    }
+                    className="w-full pl-10 pr-4 py-2.5 rounded-[1rem] border border-slate-200 bg-slate-50 border-slate-200 text-slate-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    placeholder="e.g. ABC Suppliers Pvt. Ltd."
+                  />{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* Total Value Preview */}{" "}
+              {formData.quantity &&
+                formData.costPrice &&
+                formData.sellingPrice && (
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-[1.5rem]">
+                    {" "}
+                    <p className="text-xs font-medium text-blue-600 mb-2 uppercase tracking-wider">
+                      {" "}
+                      Batch Summary{" "}
+                    </p>{" "}
+                    <div className="grid grid-cols-3 gap-4">
+                      {" "}
+                      <div>
+                        {" "}
+                        <p className="text-xs text-blue-500 ">
+                          Total Cost
+                        </p>{" "}
+                        <p className="text-lg font-bold tracking-tight text-indigo-700 ">
+                          {" "}
+                          ₹
+                          {(
+                            parseInt(formData.quantity) *
+                            parseFloat(formData.costPrice)
+                          ).toLocaleString("en-IN")}{" "}
+                        </p>{" "}
+                      </div>{" "}
+                      <div>
+                        {" "}
+                        <p className="text-xs text-blue-500 ">
+                          Total Value
+                        </p>{" "}
+                        <p className="text-lg font-bold tracking-tight text-indigo-700 ">
+                          {" "}
+                          ₹
+                          {(
+                            parseInt(formData.quantity) *
+                            parseFloat(formData.sellingPrice)
+                          ).toLocaleString("en-IN")}{" "}
+                        </p>{" "}
+                      </div>{" "}
+                      <div>
+                        {" "}
+                        <p className="text-xs text-blue-500 ">Margin</p>{" "}
+                        <p className="text-lg font-bold tracking-tight text-emerald-600 ">
+                          {" "}
+                          ₹
+                          {(
+                            parseInt(formData.quantity) *
+                            (parseFloat(formData.sellingPrice) -
+                              parseFloat(formData.costPrice))
+                          ).toLocaleString("en-IN")}{" "}
+                        </p>{" "}
+                      </div>{" "}
+                    </div>{" "}
+                  </div>
+                )}{" "}
+            </div>{" "}
+            {/* Submit */}{" "}
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+              {" "}
+              <button
+                type="submit"
+                disabled={loading || !selectedProduct}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-200/40 border border-blue-700 transition-all font-medium rounded-[1rem] hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {" "}
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}{" "}
+                Confirm Stock Entry{" "}
+              </button>{" "}
+            </div>{" "}
+          </form>{" "}
+          {/* Price History Section */}{" "}
+          {selectedProduct && (
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all overflow-hidden">
+              {" "}
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                {" "}
+                <div className="flex items-center gap-3">
+                  {" "}
+                  <div className="w-8 h-8 bg-violet-50 text-violet-600 border border-violet-100 rounded-lg flex items-center justify-center">
+                    {" "}
+                    <History className="w-4 h-4" />{" "}
+                  </div>{" "}
+                  <h3 className="font-bold text-slate-900 ">
+                    Historical Rates
+                  </h3>{" "}
+                </div>{" "}
+                {loadingHistory && (
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                )}{" "}
+              </div>{" "}
+              <div className="p-0">
+                {" "}
+                {priceHistory.length > 0 ? (
+                  <table className="w-full text-left text-sm">
+                    {" "}
+                    <thead className="bg-slate-50 border-slate-200 text-slate-500 leading-relaxed ">
+                      {" "}
+                      <tr>
+                        {" "}
+                        <th className="px-6 py-2 font-medium">Date</th>{" "}
+                        <th className="px-6 py-2 font-medium">Supplier</th>{" "}
+                        <th className="px-6 py-2 font-medium">Qty</th>{" "}
+                        <th className="px-6 py-2 font-medium">
+                          Cost / Sell (₹)
+                        </th>{" "}
+                      </tr>{" "}
+                    </thead>{" "}
+                    <tbody className="divide-y divide-gray-100 ">
+                      {" "}
+                      {priceHistory.map((batch) => (
+                        <tr
+                          key={batch.id}
+                          className="hover:bg-slate-50 border-slate-200/30"
+                        >
+                          {" "}
+                          <td className="px-6 py-3">
+                            {formatDate(batch.dateAdded)}
+                          </td>{" "}
+                          <td className="px-6 py-3">{batch.supplier || "—"}</td>{" "}
+                          <td className="px-6 py-3">{batch.quantity}</td>{" "}
+                          <td className="px-6 py-3 font-medium text-slate-900 ">
+                            {" "}
+                            ₹{batch.costPrice} / ₹{batch.sellingPrice}{" "}
+                          </td>{" "}
+                        </tr>
+                      ))}{" "}
+                    </tbody>{" "}
+                  </table>
+                ) : (
+                  <div className="p-6 text-center text-sm text-slate-500 leading-relaxed">
+                    {" "}
+                    No historical batches found for this product.{" "}
+                  </div>
+                )}{" "}
+              </div>{" "}
+            </div>
+          )}{" "}
+        </div>{" "}
+        {/* Quick Stats Sidebar */}{" "}
+        <div className="space-y-6">
+          {" "}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all p-6">
+            {" "}
+            <div className="flex items-center gap-3 mb-4">
+              {" "}
+              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-[1rem] flex items-center justify-center">
+                {" "}
+                <Clock className="w-5 h-5" />{" "}
+              </div>{" "}
+              <h3 className="font-bold text-slate-900 ">Quick Info</h3>{" "}
+            </div>{" "}
+            <div className="space-y-3">
+              {" "}
+              <div className="flex justify-between items-center py-2 border-b border-slate-200 ">
+                {" "}
+                <span className="text-sm text-slate-500 leading-relaxed">
+                  Total Products
+                </span>{" "}
+                <span className="text-sm font-semibold text-slate-900 ">
+                  {products.length}
+                </span>{" "}
+              </div>{" "}
+              <div className="flex justify-between items-center py-2 border-b border-slate-200 ">
+                {" "}
+                <span className="text-sm text-slate-500 leading-relaxed">
+                  Low Stock Items
+                </span>{" "}
+                <span className="text-sm font-semibold text-red-600 ">
+                  {" "}
+                  {products.filter((p) => p.stockQuantity < 10).length}{" "}
+                </span>{" "}
+              </div>{" "}
+            </div>{" "}
+          </div>{" "}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 transition-all overflow-hidden">
+            {" "}
+            <div className="px-6 py-4 border-b border-slate-200 ">
+              {" "}
+              <h3 className="font-bold text-slate-900 ">Recent Entries</h3>{" "}
+            </div>{" "}
+            <div className="divide-y divide-gray-100 ">
+              {" "}
+              {batches.slice(0, 5).map((batch) => (
+                <div
+                  key={batch.id}
+                  className="p-4 hover:bg-slate-50 border-slate-200/30"
+                >
+                  {" "}
+                  <div className="flex justify-between items-start mb-1">
+                    {" "}
+                    <p className="text-sm font-medium text-slate-900 flex items-center flex-wrap gap-1">
+                      {batch.product?.name}
+                      {batch.product?.make && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Make: {batch.product.make}</span>}
+                      {batch.product?.size && <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Size: {batch.product.size}</span>}
+                    </p>{" "}
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      {" "}
+                      +{batch.quantity}{" "}
+                    </span>{" "}
+                  </div>{" "}
+                  <p className="text-xs text-slate-500 leading-relaxed mb-1">
+                    ₹{batch.costPrice} / ₹{batch.sellingPrice}
+                  </p>{" "}
+                  <p className="text-[10px] text-gray-400">
+                    {formatDate(batch.dateAdded)}
+                  </p>{" "}
+                </div>
+              ))}{" "}
+            </div>{" "}
+          </div>{" "}
+        </div>{" "}
+      </div>{" "}
+    </div>
+  );
 }

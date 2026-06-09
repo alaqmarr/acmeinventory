@@ -8,24 +8,31 @@ export async function getProducts() {
 export async function createProduct(data: {
   name: string;
   sku: string;
+  make?: string;
+  size?: string;
+  description?: string;
   category?: string;
   defaultSellingPrice: number;
   defaultCostPrice?: number;
   defaultGst?: number;
 }) {
   try {
+    const upperSku = data.sku.toUpperCase();
     const existingSku = await prisma.product.findUnique({
-      where: { sku: data.sku },
+      where: { sku: upperSku },
     });
     if (existingSku) {
       return { success: false, error: "Product with this SKU already exists" };
     }
     const product = await prisma.product.create({
       data: {
-        id: generateId("prd", data.sku || data.name),
-        name: data.name,
-        sku: data.sku,
-        category: data.category,
+        id: generateId("prd", upperSku || data.name.toUpperCase()),
+        name: data.name.toUpperCase(),
+        sku: upperSku,
+        make: data.make ? data.make.toUpperCase() : data.make,
+        size: data.size ? data.size.toUpperCase() : data.size,
+        description: data.description ? data.description.toUpperCase() : data.description,
+        category: data.category ? data.category.toUpperCase() : data.category,
         defaultSellingPrice: data.defaultSellingPrice,
         defaultCostPrice: data.defaultCostPrice,
         defaultGst: data.defaultGst ?? 18.0,
@@ -43,6 +50,9 @@ export async function updateProduct(
   data: {
     name: string;
     sku: string;
+    make?: string;
+    size?: string;
+    description?: string;
     category?: string;
     defaultSellingPrice: number;
     defaultCostPrice?: number;
@@ -53,9 +63,12 @@ export async function updateProduct(
     const product = await prisma.product.update({
       where: { id },
       data: {
-        name: data.name,
-        sku: data.sku,
-        category: data.category,
+        name: data.name.toUpperCase(),
+        sku: data.sku.toUpperCase(),
+        make: data.make ? data.make.toUpperCase() : data.make,
+        size: data.size ? data.size.toUpperCase() : data.size,
+        description: data.description ? data.description.toUpperCase() : data.description,
+        category: data.category ? data.category.toUpperCase() : data.category,
         defaultSellingPrice: data.defaultSellingPrice,
         defaultCostPrice: data.defaultCostPrice,
         defaultGst: data.defaultGst,

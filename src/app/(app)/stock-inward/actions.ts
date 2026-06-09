@@ -9,6 +9,8 @@ export async function getProducts() {
       id: true,
       name: true,
       sku: true,
+      make: true,
+      size: true,
       category: true,
       defaultCostPrice: true,
       defaultSellingPrice: true,
@@ -62,7 +64,7 @@ export async function getRecentBatches() {
   return await prisma.stockBatch.findMany({
     orderBy: { dateAdded: "desc" },
     take: 20,
-    include: { product: { select: { name: true, sku: true } } },
+    include: { product: { select: { name: true, sku: true, make: true, size: true } } },
   });
 }
 export async function getProductBatchHistory(productId: string) {

@@ -43,6 +43,9 @@ export type ProductSumAggregateOutputType = {
 export type ProductMinAggregateOutputType = {
   id: string | null
   name: string | null
+  make: string | null
+  size: string | null
+  description: string | null
   sku: string | null
   qrCode: string | null
   category: string | null
@@ -57,6 +60,9 @@ export type ProductMinAggregateOutputType = {
 export type ProductMaxAggregateOutputType = {
   id: string | null
   name: string | null
+  make: string | null
+  size: string | null
+  description: string | null
   sku: string | null
   qrCode: string | null
   category: string | null
@@ -71,6 +77,9 @@ export type ProductMaxAggregateOutputType = {
 export type ProductCountAggregateOutputType = {
   id: number
   name: number
+  make: number
+  size: number
+  description: number
   sku: number
   qrCode: number
   category: number
@@ -101,6 +110,9 @@ export type ProductSumAggregateInputType = {
 export type ProductMinAggregateInputType = {
   id?: true
   name?: true
+  make?: true
+  size?: true
+  description?: true
   sku?: true
   qrCode?: true
   category?: true
@@ -115,6 +127,9 @@ export type ProductMinAggregateInputType = {
 export type ProductMaxAggregateInputType = {
   id?: true
   name?: true
+  make?: true
+  size?: true
+  description?: true
   sku?: true
   qrCode?: true
   category?: true
@@ -129,6 +144,9 @@ export type ProductMaxAggregateInputType = {
 export type ProductCountAggregateInputType = {
   id?: true
   name?: true
+  make?: true
+  size?: true
+  description?: true
   sku?: true
   qrCode?: true
   category?: true
@@ -230,6 +248,9 @@ export type ProductGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 export type ProductGroupByOutputType = {
   id: string
   name: string
+  make: string | null
+  size: string | null
+  description: string | null
   sku: string
   qrCode: string | null
   category: string | null
@@ -267,6 +288,9 @@ export type ProductWhereInput = {
   NOT?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
   id?: Prisma.StringFilter<"Product"> | string
   name?: Prisma.StringFilter<"Product"> | string
+  make?: Prisma.StringNullableFilter<"Product"> | string | null
+  size?: Prisma.StringNullableFilter<"Product"> | string | null
+  description?: Prisma.StringNullableFilter<"Product"> | string | null
   sku?: Prisma.StringFilter<"Product"> | string
   qrCode?: Prisma.StringNullableFilter<"Product"> | string | null
   category?: Prisma.StringNullableFilter<"Product"> | string | null
@@ -283,6 +307,9 @@ export type ProductWhereInput = {
 export type ProductOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  make?: Prisma.SortOrderInput | Prisma.SortOrder
+  size?: Prisma.SortOrderInput | Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
   sku?: Prisma.SortOrder
   qrCode?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -304,6 +331,9 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ProductWhereInput[]
   NOT?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
   name?: Prisma.StringFilter<"Product"> | string
+  make?: Prisma.StringNullableFilter<"Product"> | string | null
+  size?: Prisma.StringNullableFilter<"Product"> | string | null
+  description?: Prisma.StringNullableFilter<"Product"> | string | null
   category?: Prisma.StringNullableFilter<"Product"> | string | null
   defaultCostPrice?: Prisma.FloatNullableFilter<"Product"> | number | null
   defaultSellingPrice?: Prisma.FloatFilter<"Product"> | number
@@ -318,6 +348,9 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
 export type ProductOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  make?: Prisma.SortOrderInput | Prisma.SortOrder
+  size?: Prisma.SortOrderInput | Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
   sku?: Prisma.SortOrder
   qrCode?: Prisma.SortOrderInput | Prisma.SortOrder
   category?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -340,6 +373,9 @@ export type ProductScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ProductScalarWhereWithAggregatesInput | Prisma.ProductScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Product"> | string
   name?: Prisma.StringWithAggregatesFilter<"Product"> | string
+  make?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
+  size?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
+  description?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   sku?: Prisma.StringWithAggregatesFilter<"Product"> | string
   qrCode?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
   category?: Prisma.StringNullableWithAggregatesFilter<"Product"> | string | null
@@ -354,6 +390,9 @@ export type ProductScalarWhereWithAggregatesInput = {
 export type ProductCreateInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -370,6 +409,9 @@ export type ProductCreateInput = {
 export type ProductUncheckedCreateInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -386,6 +428,9 @@ export type ProductUncheckedCreateInput = {
 export type ProductUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -402,6 +447,9 @@ export type ProductUpdateInput = {
 export type ProductUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -418,6 +466,9 @@ export type ProductUncheckedUpdateInput = {
 export type ProductCreateManyInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -432,6 +483,9 @@ export type ProductCreateManyInput = {
 export type ProductUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -446,6 +500,9 @@ export type ProductUpdateManyMutationInput = {
 export type ProductUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -460,6 +517,9 @@ export type ProductUncheckedUpdateManyInput = {
 export type ProductCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  make?: Prisma.SortOrder
+  size?: Prisma.SortOrder
+  description?: Prisma.SortOrder
   sku?: Prisma.SortOrder
   qrCode?: Prisma.SortOrder
   category?: Prisma.SortOrder
@@ -481,6 +541,9 @@ export type ProductAvgOrderByAggregateInput = {
 export type ProductMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  make?: Prisma.SortOrder
+  size?: Prisma.SortOrder
+  description?: Prisma.SortOrder
   sku?: Prisma.SortOrder
   qrCode?: Prisma.SortOrder
   category?: Prisma.SortOrder
@@ -495,6 +558,9 @@ export type ProductMaxOrderByAggregateInput = {
 export type ProductMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  make?: Prisma.SortOrder
+  size?: Prisma.SortOrder
+  description?: Prisma.SortOrder
   sku?: Prisma.SortOrder
   qrCode?: Prisma.SortOrder
   category?: Prisma.SortOrder
@@ -573,6 +639,9 @@ export type ProductUpdateOneRequiredWithoutSaleItemsNestedInput = {
 export type ProductCreateWithoutBatchesInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -588,6 +657,9 @@ export type ProductCreateWithoutBatchesInput = {
 export type ProductUncheckedCreateWithoutBatchesInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -619,6 +691,9 @@ export type ProductUpdateToOneWithWhereWithoutBatchesInput = {
 export type ProductUpdateWithoutBatchesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -634,6 +709,9 @@ export type ProductUpdateWithoutBatchesInput = {
 export type ProductUncheckedUpdateWithoutBatchesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -649,6 +727,9 @@ export type ProductUncheckedUpdateWithoutBatchesInput = {
 export type ProductCreateWithoutSaleItemsInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -664,6 +745,9 @@ export type ProductCreateWithoutSaleItemsInput = {
 export type ProductUncheckedCreateWithoutSaleItemsInput = {
   id: string
   name: string
+  make?: string | null
+  size?: string | null
+  description?: string | null
   sku: string
   qrCode?: string | null
   category?: string | null
@@ -695,6 +779,9 @@ export type ProductUpdateToOneWithWhereWithoutSaleItemsInput = {
 export type ProductUpdateWithoutSaleItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -710,6 +797,9 @@ export type ProductUpdateWithoutSaleItemsInput = {
 export type ProductUncheckedUpdateWithoutSaleItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  make?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  size?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sku?: Prisma.StringFieldUpdateOperationsInput | string
   qrCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -765,6 +855,9 @@ export type ProductCountOutputTypeCountSaleItemsArgs<ExtArgs extends runtime.Typ
 export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
+  make?: boolean
+  size?: boolean
+  description?: boolean
   sku?: boolean
   qrCode?: boolean
   category?: boolean
@@ -782,6 +875,9 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
+  make?: boolean
+  size?: boolean
+  description?: boolean
   sku?: boolean
   qrCode?: boolean
   category?: boolean
@@ -796,6 +892,9 @@ export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
+  make?: boolean
+  size?: boolean
+  description?: boolean
   sku?: boolean
   qrCode?: boolean
   category?: boolean
@@ -810,6 +909,9 @@ export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type ProductSelectScalar = {
   id?: boolean
   name?: boolean
+  make?: boolean
+  size?: boolean
+  description?: boolean
   sku?: boolean
   qrCode?: boolean
   category?: boolean
@@ -821,7 +923,7 @@ export type ProductSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "sku" | "qrCode" | "category" | "defaultCostPrice" | "defaultSellingPrice" | "defaultGst" | "stockQuantity" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "make" | "size" | "description" | "sku" | "qrCode" | "category" | "defaultCostPrice" | "defaultSellingPrice" | "defaultGst" | "stockQuantity" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   batches?: boolean | Prisma.Product$batchesArgs<ExtArgs>
   saleItems?: boolean | Prisma.Product$saleItemsArgs<ExtArgs>
@@ -839,6 +941,9 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
+    make: string | null
+    size: string | null
+    description: string | null
     sku: string
     qrCode: string | null
     category: string | null
@@ -1275,6 +1380,9 @@ export interface Prisma__ProductClient<T, Null = never, ExtArgs extends runtime.
 export interface ProductFieldRefs {
   readonly id: Prisma.FieldRef<"Product", 'String'>
   readonly name: Prisma.FieldRef<"Product", 'String'>
+  readonly make: Prisma.FieldRef<"Product", 'String'>
+  readonly size: Prisma.FieldRef<"Product", 'String'>
+  readonly description: Prisma.FieldRef<"Product", 'String'>
   readonly sku: Prisma.FieldRef<"Product", 'String'>
   readonly qrCode: Prisma.FieldRef<"Product", 'String'>
   readonly category: Prisma.FieldRef<"Product", 'String'>

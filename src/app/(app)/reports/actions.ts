@@ -55,6 +55,8 @@ export async function getReportData(filters: ReportFilters) {
     {
       id: string;
       name: string;
+      make: string | null;
+      size: string | null;
       sku: string;
       qty: number;
       revenue: number;
@@ -83,6 +85,8 @@ export async function getReportData(filters: ReportFilters) {
       productMap[item.productId] = {
         id: item.productId,
         name: item.product.name,
+        make: item.product.make,
+        size: item.product.size,
         sku: item.product.sku,
         qty: 0,
         revenue: 0,

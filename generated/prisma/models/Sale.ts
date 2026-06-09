@@ -40,6 +40,7 @@ export type SaleSumAggregateOutputType = {
 
 export type SaleMinAggregateOutputType = {
   id: string | null
+  invoiceNumber: string | null
   customerId: string | null
   isGstBill: boolean | null
   subtotalAmount: number | null
@@ -50,6 +51,7 @@ export type SaleMinAggregateOutputType = {
 
 export type SaleMaxAggregateOutputType = {
   id: string | null
+  invoiceNumber: string | null
   customerId: string | null
   isGstBill: boolean | null
   subtotalAmount: number | null
@@ -60,6 +62,7 @@ export type SaleMaxAggregateOutputType = {
 
 export type SaleCountAggregateOutputType = {
   id: number
+  invoiceNumber: number
   customerId: number
   isGstBill: number
   subtotalAmount: number
@@ -84,6 +87,7 @@ export type SaleSumAggregateInputType = {
 
 export type SaleMinAggregateInputType = {
   id?: true
+  invoiceNumber?: true
   customerId?: true
   isGstBill?: true
   subtotalAmount?: true
@@ -94,6 +98,7 @@ export type SaleMinAggregateInputType = {
 
 export type SaleMaxAggregateInputType = {
   id?: true
+  invoiceNumber?: true
   customerId?: true
   isGstBill?: true
   subtotalAmount?: true
@@ -104,6 +109,7 @@ export type SaleMaxAggregateInputType = {
 
 export type SaleCountAggregateInputType = {
   id?: true
+  invoiceNumber?: true
   customerId?: true
   isGstBill?: true
   subtotalAmount?: true
@@ -201,6 +207,7 @@ export type SaleGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type SaleGroupByOutputType = {
   id: string
+  invoiceNumber: string | null
   customerId: string
   isGstBill: boolean
   subtotalAmount: number
@@ -234,6 +241,7 @@ export type SaleWhereInput = {
   OR?: Prisma.SaleWhereInput[]
   NOT?: Prisma.SaleWhereInput | Prisma.SaleWhereInput[]
   id?: Prisma.StringFilter<"Sale"> | string
+  invoiceNumber?: Prisma.StringNullableFilter<"Sale"> | string | null
   customerId?: Prisma.StringFilter<"Sale"> | string
   isGstBill?: Prisma.BoolFilter<"Sale"> | boolean
   subtotalAmount?: Prisma.FloatFilter<"Sale"> | number
@@ -246,6 +254,7 @@ export type SaleWhereInput = {
 
 export type SaleOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  invoiceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   customerId?: Prisma.SortOrder
   isGstBill?: Prisma.SortOrder
   subtotalAmount?: Prisma.SortOrder
@@ -258,6 +267,7 @@ export type SaleOrderByWithRelationInput = {
 
 export type SaleWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  invoiceNumber?: string
   AND?: Prisma.SaleWhereInput | Prisma.SaleWhereInput[]
   OR?: Prisma.SaleWhereInput[]
   NOT?: Prisma.SaleWhereInput | Prisma.SaleWhereInput[]
@@ -269,10 +279,11 @@ export type SaleWhereUniqueInput = Prisma.AtLeast<{
   date?: Prisma.DateTimeFilter<"Sale"> | Date | string
   customer?: Prisma.XOR<Prisma.CustomerScalarRelationFilter, Prisma.CustomerWhereInput>
   items?: Prisma.SaleItemListRelationFilter
-}, "id">
+}, "id" | "invoiceNumber">
 
 export type SaleOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  invoiceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   customerId?: Prisma.SortOrder
   isGstBill?: Prisma.SortOrder
   subtotalAmount?: Prisma.SortOrder
@@ -291,6 +302,7 @@ export type SaleScalarWhereWithAggregatesInput = {
   OR?: Prisma.SaleScalarWhereWithAggregatesInput[]
   NOT?: Prisma.SaleScalarWhereWithAggregatesInput | Prisma.SaleScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Sale"> | string
+  invoiceNumber?: Prisma.StringNullableWithAggregatesFilter<"Sale"> | string | null
   customerId?: Prisma.StringWithAggregatesFilter<"Sale"> | string
   isGstBill?: Prisma.BoolWithAggregatesFilter<"Sale"> | boolean
   subtotalAmount?: Prisma.FloatWithAggregatesFilter<"Sale"> | number
@@ -301,6 +313,7 @@ export type SaleScalarWhereWithAggregatesInput = {
 
 export type SaleCreateInput = {
   id: string
+  invoiceNumber?: string | null
   isGstBill?: boolean
   subtotalAmount: number
   gstAmount: number
@@ -312,6 +325,7 @@ export type SaleCreateInput = {
 
 export type SaleUncheckedCreateInput = {
   id: string
+  invoiceNumber?: string | null
   customerId: string
   isGstBill?: boolean
   subtotalAmount: number
@@ -323,6 +337,7 @@ export type SaleUncheckedCreateInput = {
 
 export type SaleUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   gstAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -334,6 +349,7 @@ export type SaleUpdateInput = {
 
 export type SaleUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -345,6 +361,7 @@ export type SaleUncheckedUpdateInput = {
 
 export type SaleCreateManyInput = {
   id: string
+  invoiceNumber?: string | null
   customerId: string
   isGstBill?: boolean
   subtotalAmount: number
@@ -355,6 +372,7 @@ export type SaleCreateManyInput = {
 
 export type SaleUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   gstAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -364,6 +382,7 @@ export type SaleUpdateManyMutationInput = {
 
 export type SaleUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -384,6 +403,7 @@ export type SaleOrderByRelationAggregateInput = {
 
 export type SaleCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  invoiceNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   isGstBill?: Prisma.SortOrder
   subtotalAmount?: Prisma.SortOrder
@@ -400,6 +420,7 @@ export type SaleAvgOrderByAggregateInput = {
 
 export type SaleMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  invoiceNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   isGstBill?: Prisma.SortOrder
   subtotalAmount?: Prisma.SortOrder
@@ -410,6 +431,7 @@ export type SaleMaxOrderByAggregateInput = {
 
 export type SaleMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  invoiceNumber?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   isGstBill?: Prisma.SortOrder
   subtotalAmount?: Prisma.SortOrder
@@ -491,6 +513,7 @@ export type SaleUpdateOneRequiredWithoutItemsNestedInput = {
 
 export type SaleCreateWithoutCustomerInput = {
   id: string
+  invoiceNumber?: string | null
   isGstBill?: boolean
   subtotalAmount: number
   gstAmount: number
@@ -501,6 +524,7 @@ export type SaleCreateWithoutCustomerInput = {
 
 export type SaleUncheckedCreateWithoutCustomerInput = {
   id: string
+  invoiceNumber?: string | null
   isGstBill?: boolean
   subtotalAmount: number
   gstAmount: number
@@ -539,6 +563,7 @@ export type SaleScalarWhereInput = {
   OR?: Prisma.SaleScalarWhereInput[]
   NOT?: Prisma.SaleScalarWhereInput | Prisma.SaleScalarWhereInput[]
   id?: Prisma.StringFilter<"Sale"> | string
+  invoiceNumber?: Prisma.StringNullableFilter<"Sale"> | string | null
   customerId?: Prisma.StringFilter<"Sale"> | string
   isGstBill?: Prisma.BoolFilter<"Sale"> | boolean
   subtotalAmount?: Prisma.FloatFilter<"Sale"> | number
@@ -549,6 +574,7 @@ export type SaleScalarWhereInput = {
 
 export type SaleCreateWithoutItemsInput = {
   id: string
+  invoiceNumber?: string | null
   isGstBill?: boolean
   subtotalAmount: number
   gstAmount: number
@@ -559,6 +585,7 @@ export type SaleCreateWithoutItemsInput = {
 
 export type SaleUncheckedCreateWithoutItemsInput = {
   id: string
+  invoiceNumber?: string | null
   customerId: string
   isGstBill?: boolean
   subtotalAmount: number
@@ -585,6 +612,7 @@ export type SaleUpdateToOneWithWhereWithoutItemsInput = {
 
 export type SaleUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   gstAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -595,6 +623,7 @@ export type SaleUpdateWithoutItemsInput = {
 
 export type SaleUncheckedUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -605,6 +634,7 @@ export type SaleUncheckedUpdateWithoutItemsInput = {
 
 export type SaleCreateManyCustomerInput = {
   id: string
+  invoiceNumber?: string | null
   isGstBill?: boolean
   subtotalAmount: number
   gstAmount: number
@@ -614,6 +644,7 @@ export type SaleCreateManyCustomerInput = {
 
 export type SaleUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   gstAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -624,6 +655,7 @@ export type SaleUpdateWithoutCustomerInput = {
 
 export type SaleUncheckedUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   gstAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -634,6 +666,7 @@ export type SaleUncheckedUpdateWithoutCustomerInput = {
 
 export type SaleUncheckedUpdateManyWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  invoiceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isGstBill?: Prisma.BoolFieldUpdateOperationsInput | boolean
   subtotalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   gstAmount?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -674,6 +707,7 @@ export type SaleCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.Exte
 
 export type SaleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  invoiceNumber?: boolean
   customerId?: boolean
   isGstBill?: boolean
   subtotalAmount?: boolean
@@ -687,6 +721,7 @@ export type SaleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 
 export type SaleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  invoiceNumber?: boolean
   customerId?: boolean
   isGstBill?: boolean
   subtotalAmount?: boolean
@@ -698,6 +733,7 @@ export type SaleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 
 export type SaleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  invoiceNumber?: boolean
   customerId?: boolean
   isGstBill?: boolean
   subtotalAmount?: boolean
@@ -709,6 +745,7 @@ export type SaleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 
 export type SaleSelectScalar = {
   id?: boolean
+  invoiceNumber?: boolean
   customerId?: boolean
   isGstBill?: boolean
   subtotalAmount?: boolean
@@ -717,7 +754,7 @@ export type SaleSelectScalar = {
   date?: boolean
 }
 
-export type SaleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "customerId" | "isGstBill" | "subtotalAmount" | "gstAmount" | "totalAmount" | "date", ExtArgs["result"]["sale"]>
+export type SaleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "invoiceNumber" | "customerId" | "isGstBill" | "subtotalAmount" | "gstAmount" | "totalAmount" | "date", ExtArgs["result"]["sale"]>
 export type SaleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Sale$itemsArgs<ExtArgs>
@@ -738,6 +775,7 @@ export type $SalePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    invoiceNumber: string | null
     customerId: string
     isGstBill: boolean
     subtotalAmount: number
@@ -1170,6 +1208,7 @@ export interface Prisma__SaleClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface SaleFieldRefs {
   readonly id: Prisma.FieldRef<"Sale", 'String'>
+  readonly invoiceNumber: Prisma.FieldRef<"Sale", 'String'>
   readonly customerId: Prisma.FieldRef<"Sale", 'String'>
   readonly isGstBill: Prisma.FieldRef<"Sale", 'Boolean'>
   readonly subtotalAmount: Prisma.FieldRef<"Sale", 'Float'>

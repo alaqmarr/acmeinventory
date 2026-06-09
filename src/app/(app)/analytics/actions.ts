@@ -115,3 +115,104 @@ export async function getProfitabilityMetrics() {
 
   return profitability.slice(0, 10);
 }
+
+export async function getTopSellingMakes(limit = 5) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const recentSaleItems = await prisma.saleItem.findMany({
+    where: {
+      sale: {
+        date: { gte: thirtyDaysAgo },
+      },
+    },
+    include: { product: true },
+  });
+
+  const makeMap = new Map<
+    string,
+    {
+      make: string;
+      totalRevenue: number;
+      quantitySold: number;
+    }
+  >();
+
+  recentSaleItems.forEach((item: any) => {
+    const make = item.product?.make;
+    if (!make) return;
+
+    const revenue = item.unitSellPrice * item.quantity;
+
+    if (makeMap.has(make)) {
+      const existing = makeMap.get(make)!;
+      existing.totalRevenue += revenue;
+      existing.quantitySold += item.quantity;
+    } else {
+      makeMap.set(make, {
+        make,
+        totalRevenue: revenue,
+        quantitySold: item.quantity,
+      });
+    }
+  });
+
+  const makes = Array.from(makeMap.values());
+  makes.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  return makes.slice(0, limit);
+}
+
+export async function getFamilyWiseSales(limit = 10) {
+  const allSaleItems = await prisma.saleItem.findMany({
+    include: { product: true }
+  });
+
+  const familyMap = new Map<string, {
+    name: string;
+    totalQuantity: number;
+    totalRevenue: number;
+    variants: Array<{ make: string | null; size: string | null; sku: string; quantity: number; revenue: number }>;
+  }>();
+
+  allSaleItems.forEach((item: any) => {
+    if (!item.product) return;
+    const key = item.product.name.toLowerCase();
+    const originalName = item.product.name;
+    const qty = item.quantity;
+    const rev = item.quantity * item.unitSellPrice;
+    
+    if (!familyMap.has(key)) {
+      familyMap.set(key, {
+        name: originalName,
+        totalQuantity: 0,
+        totalRevenue: 0,
+        variants: []
+      });
+    }
+    
+    const family = familyMap.get(key)!;
+    family.totalQuantity += qty;
+    family.totalRevenue += rev;
+    
+    const existingVariant = family.variants.find(v => v.sku === item.product.sku);
+    if (existingVariant) {
+      existingVariant.quantity += qty;
+      existingVariant.revenue += rev;
+    } else {
+      family.variants.push({
+        make: item.product.make,
+        size: item.product.size,
+        sku: item.product.sku,
+        quantity: qty,
+        revenue: rev
+      });
+    }
+  });
+
+  const families = Array.from(familyMap.values());
+  families.forEach(f => f.variants.sort((a, b) => b.quantity - a.quantity));
+  families.sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+  return families.slice(0, limit);
+}
