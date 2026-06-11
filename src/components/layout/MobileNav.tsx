@@ -18,22 +18,26 @@ import {
   LogOut
 } from "lucide-react";
 
-export function MobileNav() {
+export function MobileNav({ role = "ADMIN" }: { role?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  const links = [
-    { href: "/", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-    { href: "/sales", label: "Point of Sale", icon: <ShoppingCart className="w-5 h-5" /> },
-    { href: "/stock-inward", label: "Stock Inward", icon: <ArrowDownToLine className="w-5 h-5" /> },
-    { href: "/stock-check", label: "Stock Check", icon: <PackageSearch className="w-5 h-5" /> },
-    { href: "/products", label: "Products", icon: <Package className="w-5 h-5" /> },
-    { href: "/product-qr-print", label: "QR Labels", icon: <QrCode className="w-5 h-5" /> },
-    { href: "/clients", label: "Clients", icon: <Users className="w-5 h-5" /> },
-    { href: "/reports", label: "Reports", icon: <FileText className="w-5 h-5" /> },
-    { href: "/analytics", label: "Analytics", icon: <LineChart className="w-5 h-5" /> },
-    { href: "/ledger", label: "Ledger", icon: <FileText className="w-5 h-5" /> },
+  const allLinks = [
+    { href: "/", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, roles: ["SUPERADMIN", "ADMIN"] },
+    { href: "/sales", label: "Point of Sale", icon: <ShoppingCart className="w-5 h-5" />, roles: ["SUPERADMIN", "ADMIN"] },
+    { href: "/stock-inward", label: "Stock Inward", icon: <ArrowDownToLine className="w-5 h-5" />, roles: ["SUPERADMIN", "ADMIN"] },
+    { href: "/stock-check", label: "Stock Check", icon: <PackageSearch className="w-5 h-5" />, roles: ["SUPERADMIN", "ADMIN"] },
+    { href: "/products", label: "Products", icon: <Package className="w-5 h-5" />, roles: ["SUPERADMIN"] },
+    { href: "/product-qr-print", label: "QR Labels", icon: <QrCode className="w-5 h-5" />, roles: ["SUPERADMIN", "ADMIN"] },
+    { href: "/clients", label: "Clients", icon: <Users className="w-5 h-5" />, roles: ["SUPERADMIN", "ADMIN"] },
+    { href: "/reports", label: "Reports", icon: <FileText className="w-5 h-5" />, roles: ["SUPERADMIN"] },
+    { href: "/analytics", label: "Analytics", icon: <LineChart className="w-5 h-5" />, roles: ["SUPERADMIN"] },
+    { href: "/ledger", label: "Ledger", icon: <FileText className="w-5 h-5" />, roles: ["SUPERADMIN"] },
+    { href: "/users", label: "User Management", icon: <Users className="w-5 h-5" />, roles: ["SUPERADMIN"] },
+    { href: "/export", label: "Data Export", icon: <ArrowDownToLine className="w-5 h-5" />, roles: ["SUPERADMIN"] },
   ];
+
+  const links = allLinks.filter(link => link.roles.includes(role));
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);

@@ -30,12 +30,17 @@ export default function QRPrintClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({});
   const [generatingAll, setGeneratingAll] = useState(false);
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase()) ||
-      (p.category && p.category.toLowerCase().includes(search.toLowerCase())),
-  ); /* Generate QR data URLs on the client side using the qrcode library */
+  const filteredProducts = products.filter((p) => {
+    if (!search) return true;
+    const words = search.toUpperCase().split(' ').filter(w => w.length > 0);
+    return words.every(word => 
+      p.name.toUpperCase().includes(word) ||
+      p.sku.toUpperCase().includes(word) ||
+      (p.make && p.make.toUpperCase().includes(word)) ||
+      (p.size && p.size.toUpperCase().includes(word)) ||
+      (p.category && p.category.toUpperCase().includes(word))
+    );
+  }); /* Generate QR data URLs on the client side using the qrcode library */
 const generateQRDataUrl = useCallback(async (sku: string): Promise<string> => { const qrContent = `SKU:${sku}`; return await QRCodeLib.toDataURL(qrContent, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff", }, errorCorrectionLevel: "M", }); }, []); /* Generate all QR codes on mount */
 useEffect(() => { const generateAll = async () => { setGeneratingAll(true); const urls: Record<string, string> = {}; for (const product of products) { try { urls[product.id] = await generateQRDataUrl(product.sku); } catch { /* Skip failed generations */ }
 }

@@ -30,7 +30,7 @@ export default function StockCheckClient() {
   const [hasSearched, setHasSearched] = useState(false);
   const { showAlert } = useAlert(); /* QR Scanner State */
 const [isScannerOpen, setIsScannerOpen] = useState(false); /* Auto search when query changes (debounced) */
-useEffect(() => { const timer = setTimeout(() => { if (searchQuery.trim().length > 2) { performSearch(searchQuery); } else if (searchQuery.trim() === "") { setResults([]); setHasSearched(false); } }, 400); return () => clearTimeout(timer); }, [searchQuery]); /* QR Scanner Effect */
+useEffect(() => { const timer = setTimeout(() => { if (searchQuery.trim().length >= 2) { performSearch(searchQuery); } else if (searchQuery.trim() === "") { setResults([]); setHasSearched(false); } }, 400); return () => clearTimeout(timer); }, [searchQuery]); /* QR Scanner Effect */
 useEffect(() => { let scanner: Html5QrcodeScanner | null = null; if (isScannerOpen) { scanner = new Html5QrcodeScanner( "qr-reader-stock-check", { fps: 10, qrbox: { width: 250, height: 250 } }, false ); scanner.render( (text) => { scanner?.clear(); setIsScannerOpen(false); handleQRScan(text); }, (err) => { /* ignore errors */
 }
 );

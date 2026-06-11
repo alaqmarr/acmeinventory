@@ -18,58 +18,83 @@ export async function Sidebar() {
   const session = await getServerSession(authOptions);
   if (!session) return null;
 
-  const links = [
+  const allLinks = [
     {
       href: "/",
       label: "Dashboard",
       icon: <LayoutDashboard className="w-5 h-5" />,
+      roles: ["SUPERADMIN", "ADMIN"]
     },
     {
       href: "/sales",
       label: "Point of Sale",
       icon: <ShoppingCart className="w-5 h-5" />,
+      roles: ["SUPERADMIN", "ADMIN"]
     },
     {
       href: "/stock-inward",
       label: "Stock Inward",
       icon: <ArrowDownToLine className="w-5 h-5" />,
+      roles: ["SUPERADMIN", "ADMIN"]
     },
     {
       href: "/stock-check",
       label: "Stock Check",
       icon: <PackageSearch className="w-5 h-5" />,
+      roles: ["SUPERADMIN", "ADMIN"]
     },
     {
       href: "/products",
       label: "Products",
       icon: <Package className="w-5 h-5" />,
+      roles: ["SUPERADMIN"]
     },
     {
       href: "/product-qr-print",
       label: "QR Labels",
       icon: <QrCode className="w-5 h-5" />,
+      roles: ["SUPERADMIN", "ADMIN"]
     },
     {
       href: "/clients",
       label: "Clients",
       icon: <Users className="w-5 h-5" />,
+      roles: ["SUPERADMIN", "ADMIN"]
     },
     {
       href: "/reports",
       label: "Reports",
       icon: <FileText className="w-5 h-5" />,
+      roles: ["SUPERADMIN"]
     },
     {
       href: "/analytics",
       label: "Analytics",
       icon: <LineChart className="w-5 h-5" />,
+      roles: ["SUPERADMIN"]
     },
     {
       href: "/ledger",
       label: "Ledger",
       icon: <FileText className="w-5 h-5" />,
+      roles: ["SUPERADMIN"]
+    },
+    {
+      href: "/users",
+      label: "User Management",
+      icon: <Users className="w-5 h-5" />,
+      roles: ["SUPERADMIN"]
+    },
+    {
+      href: "/export",
+      label: "Data Export",
+      icon: <ArrowDownToLine className="w-5 h-5" />,
+      roles: ["SUPERADMIN"]
     },
   ];
+
+  const userRole = (session.user as any)?.role || "ADMIN";
+  const links = allLinks.filter(link => link.roles.includes(userRole));
 
   return (
     <aside className="w-72 bg-slate-950 text-slate-300 shadow-2xl z-10 flex flex-col h-full shrink-0 hidden md:flex border-r border-slate-900">

@@ -40,12 +40,19 @@ export default function ProductClient({
     defaultSellingPrice: "",
     defaultGst: "18",
   });
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase()),
-  );
-
+  let filteredProducts = products;
+  if (search) {
+    const words = search.toUpperCase().split(' ').filter(w => w.length > 0);
+    filteredProducts = filteredProducts.filter((p) =>
+      words.every(word => 
+        p.name.toUpperCase().includes(word) ||
+        p.sku.toUpperCase().includes(word) ||
+        (p.make && p.make.toUpperCase().includes(word)) ||
+        (p.size && p.size.toUpperCase().includes(word)) ||
+        (p.category && p.category.toUpperCase().includes(word))
+      )
+    );
+  }
   const existingProductMatch =
     !editingProduct && formData.name.trim().length > 0
       ? products.find(

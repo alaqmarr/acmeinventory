@@ -5,9 +5,17 @@ export async function checkProductStock(query: string) {
     return { success: false, error: "Search query is required." };
   }
   try {
+    const words = query.toUpperCase().split(' ').filter(w => w.length > 0);
     const products = await prisma.product.findMany({
       where: {
-        OR: [{ name: { contains: query } }, { sku: { contains: query } }],
+        AND: words.map(word => ({
+          OR: [
+            { name: { contains: word } },
+            { sku: { contains: word } },
+            { make: { contains: word } },
+            { size: { contains: word } }
+          ]
+        }))
       },
       select: {
         id: true,

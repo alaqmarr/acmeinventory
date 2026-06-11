@@ -4,9 +4,17 @@ import { revalidatePath } from "next/cache";
 import { generateId } from "@/lib/utils";
 export async function searchProducts(query: string) {
   if (!query || query.length < 2) return [];
+  const words = query.toUpperCase().split(' ').filter(w => w.length > 0);
   return prisma.product.findMany({
     where: {
-      OR: [{ name: { contains: query } }, { sku: { contains: query } }],
+      AND: words.map(word => ({
+        OR: [
+          { name: { contains: word } },
+          { sku: { contains: word } },
+          { make: { contains: word } },
+          { size: { contains: word } },
+        ]
+      }))
     },
     include: {
       batches: {

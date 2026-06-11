@@ -138,11 +138,17 @@ export default function StockInwardClient({
       });
     }
   };
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredProducts = products.filter((p) => {
+    if (!searchQuery) return true;
+    const words = searchQuery.toUpperCase().split(' ').filter(w => w.length > 0);
+    return words.every(word => 
+      p.name.toUpperCase().includes(word) ||
+      p.sku.toUpperCase().includes(word) ||
+      (p.make && p.make.toUpperCase().includes(word)) ||
+      (p.size && p.size.toUpperCase().includes(word)) ||
+      (p.category && p.category.toUpperCase().includes(word))
+    );
+  });
 
   const groupedProducts = filteredProducts.reduce(
     (acc, product) => {
